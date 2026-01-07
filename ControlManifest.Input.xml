@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control
+    namespace="AllanDeCastro"
+    constructor="BusinessProcessFlowViewer"
+    version="2.0.0"
+    display-name-key="BusinessProcessFlowViewer"
+    description-key="BusinessProcessFlowViewer_Desc"
+    control-type="virtual"
+    preview-image="img/preview.svg"
+  >
+    <external-service-usage enabled="false" />
+    
+    <!-- ========================================
+         BPF CONFIGURATION
+         ======================================== -->
+    
+    <!-- BPF Configuration (JSON) -->
+    <property 
+      name="parametersBPF" 
+      display-name-key="BPF_Configuration" 
+      description-key="BPF_Configuration_Desc" 
+      of-type="SingleLine.Text" 
+      usage="input" 
+      required="true" 
+      default-value='{"bpfs":[{"bpfEntitySchemaName":"opportunitysalesprocess","lookupFieldSchemaName":"_opportunityid_value"}]}'
+    />
+    
+    <!-- ========================================
+         DISPLAY OPTIONS
+         ======================================== -->
+    
+    <!-- Design Style -->
+    <property 
+      name="designStyle" 
+      display-name-key="Design_Style" 
+      description-key="Design_Style_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="chevron"
+    >
+      <value name="chevron" display-name-key="Design_Chevron">chevron</value>
+      <value name="circles" display-name-key="Design_Circles">circles</value>
+      <value name="pills" display-name-key="Design_Pills">pills</value>
+      <value name="segmented" display-name-key="Design_Segmented">segmented</value>
+      <value name="timeline" display-name-key="Design_Timeline">timeline</value>
+      <value name="stepper" display-name-key="Design_Stepper">stepper</value>
+    </property>
+    
+    <!-- Display Mode: Stage or Category -->
+    <property 
+      name="displayMode" 
+      display-name-key="Display_Mode" 
+      description-key="Display_Mode_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="stage"
+    >
+      <value name="stage" display-name-key="Display_Stage">stage</value>
+      <value name="category" display-name-key="Display_Category">category</value>
+    </property>
+    
+    <!-- Record Name Size -->
+    <property 
+      name="recordNameSize" 
+      display-name-key="Record_Name_Size" 
+      description-key="Record_Name_Size_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="medium"
+    >
+      <value name="small" display-name-key="Size_Small">small</value>
+      <value name="medium" display-name-key="Size_Medium">medium</value>
+      <value name="large" display-name-key="Size_Large">large</value>
+    </property>
+    
+    <!-- Show Entity Display Name -->
+    <property 
+      name="showEntityName" 
+      display-name-key="Show_Entity_Name" 
+      description-key="Show_Entity_Name_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="yes"
+    >
+      <value name="yes" display-name-key="Yes">yes</value>
+      <value name="no" display-name-key="No">no</value>
+    </property>
+    
+    <!-- Enable Click to Open Record -->
+    <property 
+      name="enableNavigation" 
+      display-name-key="Enable_Navigation" 
+      description-key="Enable_Navigation_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="yes"
+    >
+      <value name="yes" display-name-key="Yes">yes</value>
+      <value name="no" display-name-key="No">no</value>
+    </property>
+    
+    <!-- Show Pulse Animation on Active Stage -->
+    <property 
+      name="showPulseAnimation" 
+      display-name-key="Show_Pulse_Animation" 
+      description-key="Show_Pulse_Animation_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="yes"
+    >
+      <value name="yes" display-name-key="Yes">yes</value>
+      <value name="no" display-name-key="No">no</value>
+    </property>
+    
+    <!-- ========================================
+         COLOR CONFIGURATION
+         ======================================== -->
+    
+    <!-- Use Platform Theme -->
+    <property 
+      name="usePlatformTheme" 
+      display-name-key="Use_Platform_Theme" 
+      description-key="Use_Platform_Theme_Desc" 
+      of-type="Enum" 
+      usage="input" 
+      required="true" 
+      default-value="yes"
+    >
+      <value name="yes" display-name-key="Yes">yes</value>
+      <value name="no" display-name-key="No">no</value>
+    </property>
+    
+    <!-- Custom Colors (used when usePlatformTheme = no) -->
+    <property name="completedColor" display-name-key="Completed_Color" description-key="Completed_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#107C10" />
+    <property name="completedTextColor" display-name-key="Completed_Text_Color" description-key="Completed_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
+    <property name="activeColor" display-name-key="Active_Color" description-key="Active_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#0078D4" />
+    <property name="activeTextColor" display-name-key="Active_Text_Color" description-key="Active_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
+    <property name="inactiveColor" display-name-key="Inactive_Color" description-key="Inactive_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#E1E1E1" />
+    <property name="inactiveTextColor" display-name-key="Inactive_Text_Color" description-key="Inactive_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#666666" />
+
+    <!-- ========================================
+         DATASET
+         ======================================== -->
+    
+    <data-set name="records" display-name-key="Records" cds-data-set-options="displayCommandBar:false;displayViewSelector:false;displayQuickFind:false">
+    </data-set>
+    
+    <!-- ========================================
+         RESOURCES
+         ======================================== -->
+    
+    <resources>
+      <code path="index.ts" order="1" />
+      <!-- Platform Libraries for Virtual PCF -->
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+      <!-- Localization -->
+      <resx path="strings/BusinessProcessFlowViewer.1033.resx" version="1.0.0" />
+    </resources>
+    
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+      <uses-feature name="Utility" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

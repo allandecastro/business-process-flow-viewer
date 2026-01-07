@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Control Name & Description -->
+  <data name="BusinessProcessFlowViewer" xml:space="preserve">
+    <value>Business Process Flow Viewer</value>
+    <comment>Control display name</comment>
+  </data>
+  <data name="BusinessProcessFlowViewer_Desc" xml:space="preserve">
+    <value>Displays business process flow stages for records in a grid or subgrid view.</value>
+    <comment>Control description</comment>
+  </data>
+  
+  <!-- Dataset -->
+  <data name="Records" xml:space="preserve">
+    <value>Records</value>
+    <comment>Dataset display name</comment>
+  </data>
+  
+  <!-- BPF Configuration -->
+  <data name="BPF_Configuration" xml:space="preserve">
+    <value>BPF Configuration (JSON)</value>
+  </data>
+  <data name="BPF_Configuration_Desc" xml:space="preserve">
+    <value>JSON configuration for BPF entities. Example: {"bpfs":[{"bpfEntitySchemaName":"opportunitysalesprocess","lookupFieldSchemaName":"_opportunityid_value"}]}</value>
+  </data>
+  
+  <!-- Design Style -->
+  <data name="Design_Style" xml:space="preserve">
+    <value>Design Style</value>
+  </data>
+  <data name="Design_Style_Desc" xml:space="preserve">
+    <value>Visual style for displaying BPF stages</value>
+  </data>
+  <data name="Design_Chevron" xml:space="preserve">
+    <value>Chevron Arrows</value>
+  </data>
+  <data name="Design_Circles" xml:space="preserve">
+    <value>Connected Circles</value>
+  </data>
+  <data name="Design_Pills" xml:space="preserve">
+    <value>Pills / Badges</value>
+  </data>
+  <data name="Design_Segmented" xml:space="preserve">
+    <value>Segmented Bar</value>
+  </data>
+  <data name="Design_Timeline" xml:space="preserve">
+    <value>Timeline</value>
+  </data>
+  <data name="Design_Stepper" xml:space="preserve">
+    <value>Numbered Stepper</value>
+  </data>
+  
+  <!-- Display Mode -->
+  <data name="Display_Mode" xml:space="preserve">
+    <value>Display Mode</value>
+  </data>
+  <data name="Display_Mode_Desc" xml:space="preserve">
+    <value>Show stage names or category names</value>
+  </data>
+  <data name="Display_Stage" xml:space="preserve">
+    <value>Stage Names</value>
+  </data>
+  <data name="Display_Category" xml:space="preserve">
+    <value>Category Names</value>
+  </data>
+  
+  <!-- Record Name Size -->
+  <data name="Record_Name_Size" xml:space="preserve">
+    <value>Record Name Size</value>
+  </data>
+  <data name="Record_Name_Size_Desc" xml:space="preserve">
+    <value>Font size for the record name</value>
+  </data>
+  <data name="Size_Small" xml:space="preserve">
+    <value>Small</value>
+  </data>
+  <data name="Size_Medium" xml:space="preserve">
+    <value>Medium</value>
+  </data>
+  <data name="Size_Large" xml:space="preserve">
+    <value>Large</value>
+  </data>
+  
+  <!-- Show Entity Name -->
+  <data name="Show_Entity_Name" xml:space="preserve">
+    <value>Show Entity Name</value>
+  </data>
+  <data name="Show_Entity_Name_Desc" xml:space="preserve">
+    <value>Display the entity type badge next to the record name</value>
+  </data>
+  
+  <!-- Enable Navigation -->
+  <data name="Enable_Navigation" xml:space="preserve">
+    <value>Enable Navigation</value>
+  </data>
+  <data name="Enable_Navigation_Desc" xml:space="preserve">
+    <value>Allow clicking on a row to open the record form</value>
+  </data>
+  
+  <!-- Show Pulse Animation -->
+  <data name="Show_Pulse_Animation" xml:space="preserve">
+    <value>Pulse Animation</value>
+  </data>
+  <data name="Show_Pulse_Animation_Desc" xml:space="preserve">
+    <value>Show a subtle pulse animation on the active stage</value>
+  </data>
+  
+  <!-- Use Platform Theme -->
+  <data name="Use_Platform_Theme" xml:space="preserve">
+    <value>Use Platform Theme</value>
+  </data>
+  <data name="Use_Platform_Theme_Desc" xml:space="preserve">
+    <value>Use colors from the platform theme. When disabled, custom colors are used.</value>
+  </data>
+  
+  <!-- Custom Colors -->
+  <data name="Completed_Color" xml:space="preserve">
+    <value>Completed Stage Color</value>
+  </data>
+  <data name="Completed_Color_Desc" xml:space="preserve">
+    <value>Background color for completed stages (hex)</value>
+  </data>
+  <data name="Completed_Text_Color" xml:space="preserve">
+    <value>Completed Stage Text Color</value>
+  </data>
+  <data name="Completed_Text_Color_Desc" xml:space="preserve">
+    <value>Text color for completed stages (hex)</value>
+  </data>
+  <data name="Active_Color" xml:space="preserve">
+    <value>Active Stage Color</value>
+  </data>
+  <data name="Active_Color_Desc" xml:space="preserve">
+    <value>Background color for the active stage (hex)</value>
+  </data>
+  <data name="Active_Text_Color" xml:space="preserve">
+    <value>Active Stage Text Color</value>
+  </data>
+  <data name="Active_Text_Color_Desc" xml:space="preserve">
+    <value>Text color for the active stage (hex)</value>
+  </data>
+  <data name="Inactive_Color" xml:space="preserve">
+    <value>Inactive Stage Color</value>
+  </data>
+  <data name="Inactive_Color_Desc" xml:space="preserve">
+    <value>Background color for inactive stages (hex)</value>
+  </data>
+  <data name="Inactive_Text_Color" xml:space="preserve">
+    <value>Inactive Stage Text Color</value>
+  </data>
+  <data name="Inactive_Text_Color_Desc" xml:space="preserve">
+    <value>Text color for inactive stages (hex)</value>
+  </data>
+  
+  <!-- Yes/No -->
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+</root>

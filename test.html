@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPF Viewer - Test with Mock Data</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #0078d4;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls label {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .controls select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #106ebe;
+        }
+
+        .viewer-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+
+        .info {
+            background: #f0f6ff;
+            border-left: 4px solid #0078d4;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info h3 {
+            color: #0078d4;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info ul {
+            margin-left: 20px;
+            color: #333;
+        }
+
+        .info li {
+            margin: 5px 0;
+        }
+
+        #mockViewer {
+            width: 100%;
+        }
+
+        .record-row {
+            border-bottom: 1px solid #f3f2f1;
+            padding: 15px 0;
+        }
+
+        .record-row:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Business Process Flow Viewer - Mock Data Test</h1>
+        <p class="subtitle">Testing with 8 sample records across Opportunities, Leads, and Cases</p>
+
+        <div class="info">
+            <h3>📊 Mock Data Loaded</h3>
+            <ul>
+                <li><strong>6 opportunities</strong> in different stages (including one with no BPF and one loading)</li>
+                <li><strong>1 lead</strong> in the middle of the process</li>
+                <li><strong>1 case</strong> at the final stage</li>
+                <li>Mix of completed, active, and inactive stages</li>
+            </ul>
+        </div>
+
+        <div class="controls">
+            <div>
+                <label for="designSelect">Design Style:</label>
+                <select id="designSelect">
+                    <option value="chevron">Chevron</option>
+                    <option value="circles">Circles</option>
+                    <option value="pills">Pills</option>
+                    <option value="segmented">Segmented</option>
+                    <option value="timeline">Timeline</option>
+                    <option value="stepper">Stepper</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="displaySelect">Display:</label>
+                <select id="displaySelect">
+                    <option value="stage">Stage Name</option>
+                    <option value="category">Category</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="sizeSelect">Size:</label>
+                <select id="sizeSelect">
+                    <option value="small">Small</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="large">Large</option>
+                </select>
+            </div>
+
+            <button onclick="renderMockData()">Refresh</button>
+        </div>
+
+        <div class="viewer-container">
+            <div id="mockViewer"></div>
+        </div>
+    </div>
+
+    <!-- Load React from CDN -->
+    <script crossorigin src="https://unpkg.com/react@16.14.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16.14.0/umd/react-dom.development.js"></script>
+
+    <!-- PCF expects React as Reactv16 and FluentUIReactv940 -->
+    <script>
+        // PCF platform libraries use specific global names
+        window.Reactv16 = window.React;
+        window.ReactDOMv16 = window.ReactDOM;
+    </script>
+
+    <!-- Load Fluent UI v9 from CDN -->
+    <script crossorigin src="https://unpkg.com/@fluentui/react-components@9.46.2/dist/umd/react-components.production.min.js"></script>
+    <script>
+        // Fluent UI global mapping
+        if (window.FluentUIReact) {
+            window.FluentUIReactv940 = window.FluentUIReact;
+        }
+    </script>
+
+    <!-- Load the control bundle -->
+    <script src="out/controls/bundle.js"></script>
+
+    <script>
+        // Mock data defined inline
+        const MOCK_DATA = [
+            {
+                recordId: 'opp-001',
+                recordName: 'Contoso Ltd - Enterprise License Agreement 2024',
+                entityName: 'opportunity',
+                entityDisplayName: 'Opportunity',
+                bpfInstance: {
+                    processId: 'proc-001',
+                    processName: 'Opportunity Sales Process',
+                    bpfEntityName: 'opportunitysalesprocess',
+                    activeStageId: 'stage-3',
+                    traversedPath: 'stage-1,stage-2',
+                    statusCode: 1,
+                    stages: [
+                        { stageId: 'stage-1', stageName: 'Qualify', stageCategory: 0, stageCategoryName: 'Qualify', stageOrder: 0, isActive: false, isCompleted: true },
+                        { stageId: 'stage-2', stageName: 'Develop', stageCategory: 1, stageCategoryName: 'Develop', stageOrder: 1, isActive: false, isCompleted: true },
+                        { stageId: 'stage-3', stageName: 'Propose', stageCategory: 2, stageCategoryName: 'Propose', stageOrder: 2, isActive: true, isCompleted: false },
+                        { stageId: 'stage-4', stageName: 'Close', stageCategory: 3, stageCategoryName: 'Close', stageOrder: 3, isActive: false, isCompleted: false }
+                    ]
+                },
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'opp-002',
+                recordName: 'Fabrikam Inc - Cloud Migration Project',
+                entityName: 'opportunity',
+                entityDisplayName: 'Opportunity',
+                bpfInstance: {
+                    processId: 'proc-002',
+                    processName: 'Opportunity Sales Process',
+                    bpfEntityName: 'opportunitysalesprocess',
+                    activeStageId: 'stage-2',
+                    traversedPath: 'stage-1',
+                    statusCode: 1,
+                    stages: [
+                        { stageId: 'stage-1', stageName: 'Qualify', stageCategory: 0, stageCategoryName: 'Qualify', stageOrder: 0, isActive: false, isCompleted: true },
+                        { stageId: 'stage-2', stageName: 'Develop', stageCategory: 1, stageCategoryName: 'Develop', stageOrder: 1, isActive: true, isCompleted: false },
+                        { stageId: 'stage-3', stageName: 'Propose', stageCategory: 2, stageCategoryName: 'Propose', stageOrder: 2, isActive: false, isCompleted: false },
+                        { stageId: 'stage-4', stageName: 'Close', stageCategory: 3, stageCategoryName: 'Close', stageOrder: 3, isActive: false, isCompleted: false }
+                    ]
+                },
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'opp-003',
+                recordName: 'Adventure Works - Annual Support Contract',
+                entityName: 'opportunity',
+                entityDisplayName: 'Opportunity',
+                bpfInstance: {
+                    processId: 'proc-003',
+                    processName: 'Opportunity Sales Process',
+                    bpfEntityName: 'opportunitysalesprocess',
+                    activeStageId: 'stage-4',
+                    traversedPath: 'stage-1,stage-2,stage-3',
+                    statusCode: 1,
+                    stages: [
+                        { stageId: 'stage-1', stageName: 'Qualify', stageCategory: 0, stageCategoryName: 'Qualify', stageOrder: 0, isActive: false, isCompleted: true },
+                        { stageId: 'stage-2', stageName: 'Develop', stageCategory: 1, stageCategoryName: 'Develop', stageOrder: 1, isActive: false, isCompleted: true },
+                        { stageId: 'stage-3', stageName: 'Propose', stageCategory: 2, stageCategoryName: 'Propose', stageOrder: 2, isActive: false, isCompleted: true },
+                        { stageId: 'stage-4', stageName: 'Close', stageCategory: 3, stageCategoryName: 'Close', stageOrder: 3, isActive: true, isCompleted: false }
+                    ]
+                },
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'lead-001',
+                recordName: 'Northwind Traders - Web Inquiry',
+                entityName: 'lead',
+                entityDisplayName: 'Lead',
+                bpfInstance: {
+                    processId: 'proc-lead-001',
+                    processName: 'Lead to Opportunity Process',
+                    bpfEntityName: 'leadtoopportunity',
+                    activeStageId: 'lead-stage-2',
+                    traversedPath: 'lead-stage-1',
+                    statusCode: 1,
+                    stages: [
+                        { stageId: 'lead-stage-1', stageName: 'Qualify', stageCategory: 0, stageCategoryName: 'Qualify', stageOrder: 0, isActive: false, isCompleted: true },
+                        { stageId: 'lead-stage-2', stageName: 'Research', stageCategory: 5, stageCategoryName: 'Research', stageOrder: 1, isActive: true, isCompleted: false },
+                        { stageId: 'lead-stage-3', stageName: 'Convert', stageCategory: 6, stageCategoryName: 'Resolve', stageOrder: 2, isActive: false, isCompleted: false }
+                    ]
+                },
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'case-001',
+                recordName: 'CASE-2024-00142 - Login Issue Resolved',
+                entityName: 'incident',
+                entityDisplayName: 'Case',
+                bpfInstance: {
+                    processId: 'proc-case-001',
+                    processName: 'Phone to Case Process',
+                    bpfEntityName: 'phonetocase',
+                    activeStageId: 'case-stage-3',
+                    traversedPath: 'case-stage-1,case-stage-2',
+                    statusCode: 1,
+                    stages: [
+                        { stageId: 'case-stage-1', stageName: 'Identify', stageCategory: 4, stageCategoryName: 'Identify', stageOrder: 0, isActive: false, isCompleted: true },
+                        { stageId: 'case-stage-2', stageName: 'Research', stageCategory: 5, stageCategoryName: 'Research', stageOrder: 1, isActive: false, isCompleted: true },
+                        { stageId: 'case-stage-3', stageName: 'Resolve', stageCategory: 6, stageCategoryName: 'Resolve', stageOrder: 2, isActive: true, isCompleted: false }
+                    ]
+                },
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'opp-004',
+                recordName: 'TailSpin Toys - New Opportunity',
+                entityName: 'opportunity',
+                entityDisplayName: 'Opportunity',
+                bpfInstance: {
+                    processId: 'proc-004',
+                    processName: 'Opportunity Sales Process',
+                    bpfEntityName: 'opportunitysalesprocess',
+                    activeStageId: 'stage-1',
+                    traversedPath: '',
+                    statusCode: 1,
+                    stages: [
+                        { stageId: 'stage-1', stageName: 'Qualify', stageCategory: 0, stageCategoryName: 'Qualify', stageOrder: 0, isActive: true, isCompleted: false },
+                        { stageId: 'stage-2', stageName: 'Develop', stageCategory: 1, stageCategoryName: 'Develop', stageOrder: 1, isActive: false, isCompleted: false },
+                        { stageId: 'stage-3', stageName: 'Propose', stageCategory: 2, stageCategoryName: 'Propose', stageOrder: 2, isActive: false, isCompleted: false },
+                        { stageId: 'stage-4', stageName: 'Close', stageCategory: 3, stageCategoryName: 'Close', stageOrder: 3, isActive: false, isCompleted: false }
+                    ]
+                },
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'opp-005',
+                recordName: 'Wingtip Toys - No BPF Example',
+                entityName: 'opportunity',
+                entityDisplayName: 'Opportunity',
+                bpfInstance: null,
+                isLoading: false,
+                error: null
+            },
+            {
+                recordId: 'opp-006',
+                recordName: 'Loading Example',
+                entityName: 'opportunity',
+                entityDisplayName: 'Opportunity',
+                bpfInstance: null,
+                isLoading: true,
+                error: null
+            }
+        ];
+
+        // Settings
+        const SETTINGS = {
+            designStyle: 'chevron',
+            displayMode: 'stage',
+            recordNameSize: 'medium',
+            showEntityName: true,
+            enableNavigation: true,
+            showPulse: true
+        };
+
+        // Colors (using defaults)
+        const COLORS = {
+            completed: '#107C10',
+            completedText: '#FFFFFF',
+            active: '#0078D4',
+            activeText: '#FFFFFF',
+            inactive: '#E1E1E1',
+            inactiveText: '#666666',
+            track: '#E1E1E1'
+        };
+
+        function handleNavigate(recordId) {
+            const record = MOCK_DATA.find(r => r.recordId === recordId);
+            if (record) {
+                alert(`Opening record:\n\n${record.recordName}\nEntity: ${record.entityName}\nID: ${recordId}`);
+            }
+        }
+
+        function renderMockData() {
+            // Update settings from dropdowns
+            SETTINGS.designStyle = document.getElementById('designSelect').value;
+            SETTINGS.displayMode = document.getElementById('displaySelect').value;
+            SETTINGS.recordNameSize = document.getElementById('sizeSelect').value;
+
+            const container = document.getElementById('mockViewer');
+
+            // Render HTML visualization of the mock data
+            renderSimpleHTML(container, MOCK_DATA);
+        }
+
+        function renderSimpleHTML(container, records) {
+            const design = document.getElementById('designSelect').value;
+            const displayMode = document.getElementById('displaySelect').value;
+
+            let html = '<div style="font-family: Segoe UI, sans-serif;">';
+
+            records.forEach(record => {
+                html += '<div class="record-row">';
+                html += `<div style="margin-bottom: 8px; font-weight: 600; font-size: 16px; cursor: pointer;" onclick="handleNavigate('${record.recordId}')">${record.recordName}</div>`;
+                html += `<div style="margin-bottom: 8px; font-size: 12px; color: #666;">${record.entityDisplayName}</div>`;
+
+                if (record.isLoading) {
+                    html += '<div style="color: #666; font-style: italic;">⏳ Loading BPF data...</div>';
+                } else if (!record.bpfInstance) {
+                    html += '<div style="color: #999;">No Business Process Flow</div>';
+                } else {
+                    html += renderStages(record.bpfInstance.stages, design, displayMode);
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderStages(stages, design, displayMode) {
+            switch (design) {
+                case 'chevron':
+                    return renderChevronDesign(stages, displayMode);
+                case 'circles':
+                    return renderCirclesDesign(stages, displayMode);
+                case 'pills':
+                    return renderPillsDesign(stages, displayMode);
+                case 'segmented':
+                    return renderSegmentedDesign(stages, displayMode);
+                case 'timeline':
+                    return renderTimelineDesign(stages, displayMode);
+                case 'stepper':
+                    return renderStepperDesign(stages, displayMode);
+                default:
+                    return renderChevronDesign(stages, displayMode);
+            }
+        }
+
+        function renderChevronDesign(stages, displayMode) {
+            let html = '<div style="display: flex; height: 36px; margin-top: 10px;">';
+            stages.forEach((stage, idx) => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+
+                const isFirst = idx === 0;
+                const isLast = idx === stages.length - 1;
+                const clipPath = isFirst ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)' :
+                                 isLast ? 'polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%)' :
+                                 'polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%)';
+
+                html += `<div style="
+                    flex: 1;
+                    background: ${bgColor};
+                    color: ${textColor};
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                    font-weight: 600;
+                    clip-path: ${clipPath};
+                    margin-left: ${isFirst ? '0' : '-12px'};
+                    ${stage.isActive ? 'animation: pulse 2s infinite;' : ''}
+                ">${label}</div>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderCirclesDesign(stages, displayMode) {
+            let html = '<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">';
+            stages.forEach((stage, idx) => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+
+                html += `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <div style="
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        background: ${bgColor};
+                        color: ${textColor};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 14px;
+                        font-weight: 600;
+                        ${stage.isActive ? 'box-shadow: 0 0 0 3px ' + bgColor + '40;' : ''}
+                    ">${stage.isCompleted ? '✓' : idx + 1}</div>
+                    <div style="font-size: 11px; text-align: center; color: #333;">${label}</div>
+                </div>`;
+
+                if (idx < stages.length - 1) {
+                    html += `<div style="width: 20px; height: 2px; background: #ddd; margin-top: -20px;"></div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderPillsDesign(stages, displayMode) {
+            let html = '<div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">';
+            stages.forEach(stage => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+
+                html += `<div style="
+                    background: ${bgColor};
+                    color: ${textColor};
+                    padding: 8px 16px;
+                    border-radius: 16px;
+                    font-size: 12px;
+                    font-weight: ${stage.isActive ? '600' : '400'};
+                    ${stage.isActive ? 'box-shadow: 0 2px 8px ' + bgColor + '60;' : ''}
+                ">${label}</div>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderSegmentedDesign(stages, displayMode) {
+            let html = '<div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px;">';
+            stages.forEach(stage => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                html += `<div style="flex: 1; background: ${bgColor};"></div>`;
+            });
+            html += '</div>';
+
+            html += '<div style="display: flex; gap: 8px; margin-top: 8px;">';
+            stages.forEach(stage => {
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+                const color = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#666';
+                html += `<div style="flex: 1; font-size: 11px; color: ${color}; font-weight: ${stage.isActive ? '600' : '400'};">${label}</div>`;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderTimelineDesign(stages, displayMode) {
+            let html = '<div style="display: flex; align-items: center; margin-top: 10px;">';
+            stages.forEach((stage, idx) => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+
+                html += `<div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                    <div style="
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 50%;
+                        background: ${bgColor};
+                        border: 3px solid ${bgColor};
+                    "></div>
+                    <div style="margin-top: 6px; font-size: 11px; color: #333; text-align: center;">${label}</div>
+                </div>`;
+
+                if (idx < stages.length - 1) {
+                    html += `<div style="flex: 1; height: 2px; background: #ddd; margin-bottom: 30px;"></div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderStepperDesign(stages, displayMode) {
+            let html = '<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">';
+            stages.forEach((stage, idx) => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+
+                html += `<div style="
+                    flex: 1;
+                    border: 2px solid ${bgColor};
+                    background: ${stage.isActive || stage.isCompleted ? bgColor : 'white'};
+                    color: ${stage.isActive || stage.isCompleted ? textColor : bgColor};
+                    padding: 10px;
+                    text-align: center;
+                    font-size: 12px;
+                    font-weight: 600;
+                    border-radius: 4px;
+                    ${stage.isActive ? 'box-shadow: 0 2px 8px ' + bgColor + '60;' : ''}
+                ">
+                    <div style="font-size: 16px; margin-bottom: 4px;">${idx + 1}</div>
+                    <div style="font-size: 10px;">${label}</div>
+                </div>`;
+
+                if (idx < stages.length - 1) {
+                    html += `<div style="width: 16px; height: 2px; background: #ddd;"></div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            renderMockData();
+        });
+    </script>
+</body>
+</html>

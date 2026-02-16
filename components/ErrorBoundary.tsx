@@ -1,77 +1,58 @@
 /**
  * Error Boundary Component
- * 
- * Catches React errors and displays fallback UI
+ *
+ * Catches errors in design components and displays a fallback UI
+ * instead of crashing the entire control.
  */
 
 import * as React from 'react';
-import { makeStyles, tokens } from '@fluentui/react-components';
-import { ErrorCircleRegular } from '@fluentui/react-icons';
 
-const useStyles = makeStyles({
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px',
-    gap: '12px',
-    backgroundColor: tokens.colorNeutralBackground1,
-    color: tokens.colorStatusDangerForeground1,
-    textAlign: 'center',
-    minHeight: '100px',
-    width: '100%',
-  },
-  icon: {
-    fontSize: '32px',
-  },
-  title: {
-    fontSize: '16px',
-    fontWeight: 600,
-  },
-  message: {
-    fontSize: '12px',
-    color: tokens.colorNeutralForeground2,
-  },
-});
-
-interface Props {
+interface ErrorBoundaryProps {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
-  errorMessage: string;
+  error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = {
-      hasError: false,
-      errorMessage: '',
-    };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      errorMessage: error.message || 'An unexpected error occurred',
-    };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    console.error('[BPF Viewer] Error caught by ErrorBoundary:', error, errorInfo);
   }
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
-      const styles = useStyles();
+      // Custom fallback or default error message
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
-        <div className={styles.container} role="alert" aria-live="polite">
-          <ErrorCircleRegular className={styles.icon} />
-          <div className={styles.title}>Component Error</div>
-          <div className={styles.message}>{this.state.errorMessage}</div>
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#FEF0F0',
+            border: '1px solid #D13438',
+            borderRadius: '4px',
+            color: '#A4262C',
+            fontSize: '12px',
+          }}
+        >
+          <strong>⚠️ Error displaying Business Process Flow</strong>
+          <div style={{ marginTop: '4px', fontSize: '11px' }}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </div>
         </div>
       );
     }

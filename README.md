@@ -1,9 +1,13 @@
 # BusinessProcessFlowViewer v2
 
+[![CI Status](https://github.com/allandecastro/business-process-flow-viewer/workflows/CI/badge.svg)](https://github.com/allandecastro/business-process-flow-viewer/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/badge/npm-2.0.0-blue.svg)](package.json)
+
 A modern PCF (Power Apps Component Framework) control that displays Business Process Flow stages in grid and subgrid views.
 
-**Author:** Allan De Castro - Microsoft MVP  
-**Version:** 2.0.0  
+**Author:** Allan De Castro - Microsoft MVP
+**Version:** 2.0.0
 **Type:** Virtual PCF (React)
 
 ![Preview](img/preview.png)
@@ -231,6 +235,47 @@ const useStyles = makeStyles({
 });
 ```
 
+## 🧪 Development & Testing
+
+This project includes comprehensive testing infrastructure with Jest and React Testing Library.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+
+# Run tests for CI (with coverage)
+npm run test:ci
+```
+
+### Current Test Coverage
+
+- **Components**: 100% (BPFViewer, BPFRow)
+- **Services**: 38% (BPFService)
+- **Overall**: 40%+ statements
+
+### Pre-commit Hooks
+
+This project uses Husky and lint-staged to enforce code quality:
+- ESLint automatically fixes issues
+- Tests run for modified files
+- Commits are blocked if checks fail
+
+### CI/CD Pipeline
+
+GitHub Actions automatically runs on every push and PR:
+- ✅ Linting with ESLint
+- ✅ Tests with coverage reporting
+- ✅ Build verification
+- ✅ Multi-version testing (Node 18.x, 20.x)
+
 ## 📝 License
 
 MIT License - See LICENSE file
@@ -243,4 +288,4 @@ MIT License - See LICENSE file
 
 ---
 
-Made with ❤️ by Allan De Castro - [Blog](https://yoursite.com) | [GitHub](https://github.com/allandecastro/business-process-flow-viewer)
+Made with ❤️ by Allan De Castro - [Blog](https://blog.allandecastro.com) | [GitHub](https://github.com/allandecastro/)

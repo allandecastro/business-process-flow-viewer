@@ -9,6 +9,7 @@ import { FluentProvider, webLightTheme, makeStyles, tokens, Spinner, Button, The
 import { ArrowClockwiseRegular, ErrorCircleRegular } from '@fluentui/react-icons';
 import { IBPFViewerProps } from '../types';
 import { BPFRow } from './BPFRow';
+import { debounce } from '../utils/debounce';
 import { ErrorBoundary } from './ErrorBoundary';
 
 const useStyles = makeStyles({
@@ -62,9 +63,14 @@ const useIsMobile = (): boolean => {
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    const debouncedCheck = debounce(checkMobile, 150);
+
+    // Initial check (not debounced)
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    // Debounced resize listener (prevents excessive re-renders)
+    window.addEventListener('resize', debouncedCheck);
+    return () => window.removeEventListener('resize', debouncedCheck);
   }, []);
 
   return isMobile;

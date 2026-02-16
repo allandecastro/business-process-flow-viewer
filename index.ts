@@ -24,20 +24,25 @@ import {
   resolveColors,
   getCustomColors,
 } from './utils/themeUtils';
+import { getErrorMessage, BPFError, ErrorCodes } from './utils/errorMessages';
+import { validateBPFConfiguration } from './utils/configValidation';
 
 export class BusinessProcessFlowViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
   private context: ComponentFramework.Context<IInputs>;
   private bpfService: BPFService | null = null;
-  
+
   // State
   private records: IRecordBPFData[] = [];
   private isLoading: boolean = true;
   private error: string | null = null;
   private bpfConfig: IBPFConfiguration | null = null;
-  
+
   // Cache to prevent redundant fetches
   private fetchedRecordIds: Set<string> = new Set();
   private lastDatasetVersion: string = '';
+
+  // Request cancellation support
+  private abortController: AbortController | null = null;
 
   /**
    * Initialize the control
@@ -65,11 +70,31 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     try {
       const configJson = this.context.parameters.parametersBPF?.raw;
       if (configJson) {
-        this.bpfConfig = JSON.parse(configJson) as IBPFConfiguration;
+        const parsedConfig = JSON.parse(configJson);
+
+        // Validate configuration structure and content
+        const validationResult = validateBPFConfiguration(parsedConfig);
+
+        if (!validationResult.isValid) {
+          const errorDetails = validationResult.errors
+            .map(e => `${e.field}: ${e.message}`)
+            .join(', ');
+          throw new BPFError(
+            `Configuration validation failed: ${errorDetails}`,
+            ErrorCodes.INVALID_CONFIG
+          );
+        }
+
+        this.bpfConfig = validationResult.config!;
       }
     } catch (e) {
       console.error('[BPFViewer] Failed to parse BPF configuration:', e);
-      this.error = 'Invalid BPF configuration. Please check the parametersBPF property.';
+      const bpfError = e instanceof BPFError ? e : new BPFError(
+        'Invalid BPF configuration JSON',
+        ErrorCodes.INVALID_CONFIG,
+        e
+      );
+      this.error = getErrorMessage(bpfError);
     }
   }
 
@@ -138,6 +163,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       colors: this.getColors(),
       isLoading: this.isLoading || dataset.loading,
       error: this.error,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       platformTheme: platformTheme as any,
       onNavigate: this.handleNavigate.bind(this),
       onRefresh: this.handleRefresh.bind(this),
@@ -154,6 +180,12 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       return;
     }
 
+    // Cancel any pending requests
+    if (this.abortController) {
+      this.abortController.abort();
+    }
+    this.abortController = new AbortController();
+
     const recordIds = dataset.sortedRecordIds || [];
     if (recordIds.length === 0) {
       this.records = [];
@@ -163,7 +195,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
     // Get entity name from first record
     const firstRecord = dataset.records[recordIds[0]];
-    const entityName = (firstRecord as any).getNamedReference?.()?.entityType || 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entityName = (firstRecord as any).getNamedReference?.()?.entityType ||
                        this.getEntityNameFromConfig();
 
     // Build initial records with loading state
@@ -207,7 +240,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
         const bpfData = await this.bpfService.getBPFDataForRecords(
           newRecordIds,
           entityName,
-          this.bpfConfig
+          this.bpfConfig,
+          this.abortController.signal
         );
 
         // Update records with fetched data
@@ -225,14 +259,17 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
       } catch (e) {
         console.error('[BPFViewer] Failed to fetch BPF data:', e);
-        
+
+        // Get user-friendly error message
+        const errorMessage = getErrorMessage(e);
+
         // Mark records as errored
         this.records = this.records.map(record => {
           if (newRecordIds.includes(record.recordId)) {
             return {
               ...record,
               isLoading: false,
-              error: 'Failed to load BPF data',
+              error: errorMessage,
             };
           }
           return record;
@@ -318,6 +355,12 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
    * Destroy - cleanup
    */
   public destroy(): void {
+    // Cancel any pending requests
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
+
     this.bpfService?.clearCache();
     this.fetchedRecordIds.clear();
   }

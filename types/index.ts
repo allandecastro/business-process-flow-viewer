@@ -41,21 +41,17 @@ export interface IStageColors {
 // BPF Data Types
 // ============================================
 
-export type StageCategory = 
-  | 'Qualify'
-  | 'Develop'
-  | 'Propose'
-  | 'Close'
-  | 'Identify'
-  | 'Research'
-  | 'Resolve'
-  | 'Custom';
-
+/**
+ * BPF Stage definition
+ *
+ * Note: stageCategoryName is fetched from Dataverse metadata and supports
+ * localization and custom category names, so it's typed as string.
+ */
 export interface IBPFStage {
   stageId: string;
   stageName: string;
   stageCategory: number;
-  stageCategoryName: StageCategory;
+  stageCategoryName: string; // Localized label from Dataverse metadata
   stageOrder: number;
   isActive: boolean;
   isCompleted: boolean;
@@ -181,4 +177,9 @@ export interface IDatasetRecord {
   getRecordId(): string;
   getFormattedValue(columnName: string): string;
   getValue(columnName: string): unknown;
+  getNamedReference?(): {
+    id: string;
+    name: string;
+    entityType: string;
+  };
 }

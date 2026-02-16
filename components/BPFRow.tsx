@@ -7,7 +7,9 @@
 import * as React from 'react';
 import { IBPFRowProps } from '../types';
 import { getDesignComponent } from './designs';
+import { ErrorBoundary } from './ErrorBoundary';
 import { RECORD_NAME_SIZES } from '../utils/themeUtils';
+import { sanitizeText } from '../utils/sanitize';
 import { makeStyles, Spinner, tokens } from '@fluentui/react-components';
 import { OpenRegular, ErrorCircleRegular } from '@fluentui/react-icons';
 
@@ -122,6 +124,7 @@ export const BPFRow: React.FC<IBPFRowProps> = React.memo(({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault(); // Prevent scroll on Space key
       handleClick();
     }
   };
@@ -156,15 +159,19 @@ export const BPFRow: React.FC<IBPFRowProps> = React.memo(({
       );
     }
 
-    // Render design component
+    // Render design component with error boundary and suspense
     return (
-      <DesignComponent
-        stages={record.bpfInstance.stages}
-        displayMode={settings.displayMode}
-        colors={colors}
-        showPulse={settings.showPulseAnimation}
-        isMobile={isMobile}
-      />
+      <ErrorBoundary>
+        <React.Suspense fallback={<div className={styles.loadingWrapper}><Spinner size="tiny" label="Loading design..." /></div>}>
+          <DesignComponent
+            stages={record.bpfInstance.stages}
+            displayMode={settings.displayMode}
+            colors={colors}
+            showPulse={settings.showPulseAnimation}
+            isMobile={isMobile}
+          />
+        </React.Suspense>
+      </ErrorBoundary>
     );
   };
 
@@ -177,7 +184,7 @@ export const BPFRow: React.FC<IBPFRowProps> = React.memo(({
       onKeyDown={handleKeyDown}
       role={settings.enableNavigation ? 'button' : 'article'}
       tabIndex={settings.enableNavigation ? 0 : undefined}
-      aria-label={`${record.recordName} with business process flow`}
+      aria-label={`${sanitizeText(record.recordName)} with business process flow`}
     >
       {/* Header */}
       <div className={`${styles.header} ${isMobile ? styles.headerMobile : ''}`}>
@@ -188,21 +195,21 @@ export const BPFRow: React.FC<IBPFRowProps> = React.memo(({
               fontSize: nameSize.fontSize,
               fontWeight: nameSize.fontWeight,
             }}
-            title={record.recordName}
+            title={sanitizeText(record.recordName)}
           >
-            {record.recordName}
+            {sanitizeText(record.recordName)}
           </span>
           {settings.showEntityName && (
-            <span className={styles.entityBadge} aria-label={`Entity type: ${record.entityDisplayName}`}>
-              {record.entityDisplayName}
+            <span className={styles.entityBadge} aria-label={`Entity type: ${sanitizeText(record.entityDisplayName)}`}>
+              {sanitizeText(record.entityDisplayName)}
             </span>
           )}
         </div>
         {!isMobile && (
           <div className={styles.metaWrapper}>
             {record.bpfInstance && (
-              <span className={styles.processName} aria-label={`Process: ${record.bpfInstance.processName}`}>
-                {record.bpfInstance.processName}
+              <span className={styles.processName} aria-label={`Process: ${sanitizeText(record.bpfInstance.processName)}`}>
+                {sanitizeText(record.bpfInstance.processName)}
               </span>
             )}
             {settings.enableNavigation && (

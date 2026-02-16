@@ -19,7 +19,7 @@ export interface IBPFDefinition {
 // Design & Display Types
 // ============================================
 
-export type DesignStyle = 'chevron' | 'circles' | 'pills' | 'segmented' | 'timeline' | 'stepper';
+export type DesignStyle = 'chevron' | 'circles' | 'pills' | 'segmented' | 'timeline' | 'stepper' | 'gradient' | 'line' | 'fraction';
 export type DisplayMode = 'stage' | 'category';
 export type RecordNameSize = 'small' | 'medium' | 'large';
 

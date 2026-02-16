@@ -156,8 +156,10 @@
                     <option value="circles">Circles</option>
                     <option value="pills">Pills</option>
                     <option value="segmented">Segmented</option>
-                    <option value="timeline">Timeline</option>
                     <option value="stepper">Stepper</option>
+                    <option value="gradient">Gradient Bar</option>
+                    <option value="line">Line + Markers</option>
+                    <option value="fraction">Fraction</option>
                 </select>
             </div>
 
@@ -408,20 +410,17 @@
 
             let html = '<div style="font-family: Segoe UI, sans-serif;">';
 
-            records.forEach(record => {
-                html += '<div class="record-row">';
-                html += `<div style="margin-bottom: 8px; font-weight: 600; font-size: 16px; cursor: pointer;" onclick="handleNavigate('${record.recordId}')">${record.recordName}</div>`;
-                html += `<div style="margin-bottom: 8px; font-size: 12px; color: #666;">${record.entityDisplayName}</div>`;
-
+            records.forEach((record, idx) => {
+                html += `<div style="margin-bottom: 12px; font-weight: 600; font-size: 15px;">${record.recordName}</div>`;
+                
+                // Only show the BPF stages (as D365 would render)
                 if (record.isLoading) {
-                    html += '<div style="color: #666; font-style: italic;">⏳ Loading BPF data...</div>';
+                    html += '<div style="color: #666; font-style: italic; margin-bottom: 20px;">⏳ Loading BPF data...</div>';
                 } else if (!record.bpfInstance) {
-                    html += '<div style="color: #999;">No Business Process Flow</div>';
+                    html += '<div style="color: #999; margin-bottom: 20px;">No Business Process Flow</div>';
                 } else {
-                    html += renderStages(record.bpfInstance.stages, design, displayMode);
+                    html += '<div style="margin-bottom: 20px;">' + renderStages(record.bpfInstance.stages, design, displayMode) + '</div>';
                 }
-
-                html += '</div>';
             });
 
             html += '</div>';
@@ -438,17 +437,23 @@
                     return renderPillsDesign(stages, displayMode);
                 case 'segmented':
                     return renderSegmentedDesign(stages, displayMode);
-                case 'timeline':
-                    return renderTimelineDesign(stages, displayMode);
                 case 'stepper':
                     return renderStepperDesign(stages, displayMode);
+                case 'gradient':
+                    return renderGradientDesign(stages, displayMode);
+                case 'line':
+                    return renderLineDesign(stages, displayMode);
+                case 'fraction':
+                    return renderFractionDesign(stages, displayMode);
                 default:
                     return renderChevronDesign(stages, displayMode);
             }
         }
 
         function renderChevronDesign(stages, displayMode) {
-            let html = '<div style="display: flex; height: 36px; margin-top: 10px;">';
+            let html = '<div style="display: flex; height: 36px; margin-top: 10px; gap: 0;">';
+            const arrowSize = '15px';
+            
             stages.forEach((stage, idx) => {
                 const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
                 const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
@@ -456,9 +461,13 @@
 
                 const isFirst = idx === 0;
                 const isLast = idx === stages.length - 1;
-                const clipPath = isFirst ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)' :
-                                 isLast ? 'polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%)' :
-                                 'polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%)';
+                
+                // Clean arrow shapes with NO overlap - left notch is CONVEX (pointing outward like >)
+                const clipPath = isFirst 
+                    ? `polygon(0 0, calc(100% - ${arrowSize}) 0, 100% 50%, calc(100% - ${arrowSize}) 100%, 0 100%)`
+                    : isLast 
+                    ? `polygon(0 0, 100% 0, 100% 100%, 0 100%, ${arrowSize} 50%)`
+                    : `polygon(0 0, calc(100% - ${arrowSize}) 0, 100% 50%, calc(100% - ${arrowSize}) 100%, 0 100%, ${arrowSize} 50%)`;
 
                 html += `<div style="
                     flex: 1;
@@ -470,22 +479,22 @@
                     font-size: 12px;
                     font-weight: 600;
                     clip-path: ${clipPath};
-                    margin-left: ${isFirst ? '0' : '-12px'};
+                    margin-right: 4px;
                     ${stage.isActive ? 'animation: pulse 2s infinite;' : ''}
-                ">${label}</div>`;
+                " title="${stage.stageName} (${stage.stageCategoryName})">${label}</div>`;
             });
             html += '</div>';
             return html;
         }
 
         function renderCirclesDesign(stages, displayMode) {
-            let html = '<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">';
+            let html = '<div style="display: flex; align-items: center; margin-top: 10px;">';
             stages.forEach((stage, idx) => {
                 const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
                 const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
                 const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
 
-                html += `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                html += `<div style="display: flex; flex-direction: column; align-items: center; min-width: 50px; flex-shrink: 0;">
                     <div style="
                         width: 32px;
                         height: 32px;
@@ -497,13 +506,14 @@
                         justify-content: center;
                         font-size: 14px;
                         font-weight: 600;
-                        ${stage.isActive ? 'box-shadow: 0 0 0 3px ' + bgColor + '40;' : ''}
+                        ${stage.isActive ? 'animation: pulse 2s infinite;' : ''}
                     ">${stage.isCompleted ? '✓' : idx + 1}</div>
-                    <div style="font-size: 11px; text-align: center; color: #333;">${label}</div>
+                    <div style="font-size: 10px; margin-top: 4px; text-align: center; color: #666; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</div>
                 </div>`;
 
                 if (idx < stages.length - 1) {
-                    html += `<div style="width: 20px; height: 2px; background: #ddd; margin-top: -20px;"></div>`;
+                    const lineColor = stage.isCompleted ? '#107C10' : '#E1E1E1';
+                    html += `<div style="flex: 1; height: 2px; background: ${lineColor}; min-width: 8px; margin-top: -20px;"></div>`;
                 }
             });
             html += '</div>';
@@ -532,44 +542,13 @@
         }
 
         function renderSegmentedDesign(stages, displayMode) {
-            let html = '<div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px;">';
-            stages.forEach(stage => {
-                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
-                html += `<div style="flex: 1; background: ${bgColor};"></div>`;
-            });
-            html += '</div>';
-
-            html += '<div style="display: flex; gap: 8px; margin-top: 8px;">';
-            stages.forEach(stage => {
-                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
-                const color = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#666';
-                html += `<div style="flex: 1; font-size: 11px; color: ${color}; font-weight: ${stage.isActive ? '600' : '400'};">${label}</div>`;
-            });
-            html += '</div>';
-            return html;
-        }
-
-        function renderTimelineDesign(stages, displayMode) {
-            let html = '<div style="display: flex; align-items: center; margin-top: 10px;">';
+            let html = '<div style="display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin-top: 10px; background: #E1E1E1;">';
             stages.forEach((stage, idx) => {
                 const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
                 const textColor = stage.isCompleted || stage.isActive ? '#FFFFFF' : '#666666';
                 const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
-
-                html += `<div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                    <div style="
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 50%;
-                        background: ${bgColor};
-                        border: 3px solid ${bgColor};
-                    "></div>
-                    <div style="margin-top: 6px; font-size: 11px; color: #333; text-align: center;">${label}</div>
-                </div>`;
-
-                if (idx < stages.length - 1) {
-                    html += `<div style="flex: 1; height: 2px; background: #ddd; margin-bottom: 30px;"></div>`;
-                }
+                const isLast = idx === stages.length - 1;
+                html += `<div style="flex: 1; background: ${bgColor}; color: ${textColor}; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; text-align: center; border-right: ${!isLast ? '2px solid rgba(255,255,255,0.3)' : 'none'}; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${stage.isActive ? 'animation: pulse 2s infinite;' : ''}">${label}</div>`;
             });
             html += '</div>';
             return html;
@@ -603,6 +582,204 @@
                 }
             });
             html += '</div>';
+            return html;
+        }
+
+        // ============================================
+        // NEW DESIGN 1: GRADIENT BAR
+        // ============================================
+        function renderGradientDesign(stages, displayMode) {
+            const activeIndex = stages.findIndex(s => s.isActive);
+            const progressPercent = activeIndex >= 0 ? ((activeIndex + 1) / stages.length) * 100 : 0;
+
+            let html = '<div style="display: flex; flex-direction: column; width: 100%; margin-top: 10px;">';
+            
+            // Progress bar
+            html += `<div style="
+                position: relative;
+                width: 100%;
+                height: 28px;
+                background: #E1E1E1;
+                border-radius: 14px;
+                overflow: hidden;
+            ">
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    height: 100%;
+                    width: ${progressPercent}%;
+                    background: linear-gradient(to right, #107C10, #0078D4);
+                    transition: width 0.5s ease-in-out;
+                "></div>
+            </div>`;
+
+            // Labels
+            html += '<div style="display: flex; justify-content: space-between; margin-top: 12px;">';
+            stages.forEach((stage, idx) => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#E1E1E1';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+                const indicator = stage.isCompleted ? '✓' : stage.isActive ? '●' : '○';
+
+                html += `<div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    flex: 1;
+                    gap: 4px;
+                ">
+                    <div style="
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                        background: ${bgColor};
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 8px;
+                        line-height: 12px;
+                    ">${indicator}</div>
+                    <div style="
+                        font-size: 11px;
+                        font-weight: 500;
+                        text-align: center;
+                        color: #666;
+                        width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    ">${label}</div>
+                </div>`;
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        // ============================================
+        // NEW DESIGN 2: LINE + MARKERS
+        // ============================================
+        function renderLineDesign(stages, displayMode) {
+            const activeIndex = stages.findIndex(s => s.isActive);
+            const progressPercent = activeIndex >= 0 ? (activeIndex / (stages.length - 1)) * 100 : 0;
+
+            let html = '<div style="position: relative; width: 100%; padding: 28px 0; margin-top: 10px;">';
+            
+            // Track container
+            html += '<div style="position: relative; height: 4px; background: #E1E1E1; border-radius: 2px;">';
+            
+            // Progress line
+            html += `<div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: ${progressPercent}%;
+                background: linear-gradient(to right, #107C10, #0078D4);
+                border-radius: 2px;
+                transition: width 0.5s ease-in-out;
+            "></div>`;
+
+            // Markers container
+            html += '<div style="position: absolute; top: -10px; left: 0; right: 0; display: flex; justify-content: space-between;">';
+
+            stages.forEach((stage, idx) => {
+                const bgColor = stage.isCompleted ? '#107C10' : stage.isActive ? '#0078D4' : '#cccccc';
+                const label = displayMode === 'stage' ? stage.stageName : stage.stageCategoryName;
+                const markerSize = stage.isActive ? '28px' : '24px';
+                const indicator = stage.isCompleted ? '✓' : '';
+
+                html += `<div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    position: relative;
+                ">
+                    <div style="
+                        width: ${markerSize};
+                        height: ${markerSize};
+                        border-radius: 50%;
+                        background: ${bgColor};
+                        color: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 2;
+                        transition: all 0.2s;
+                        font-size: 12px;
+                        font-weight: 700;
+                        ${stage.isActive ? 'box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.2);' : ''}
+                        ${stage.isCompleted || stage.isActive ? '' : 'border: 2px solid #E1E1E1;'}
+                    ">${indicator}</div>
+                    <div style="
+                        margin-top: 36px;
+                        font-size: 11px;
+                        font-weight: 500;
+                        text-align: center;
+                        color: #666;
+                        max-width: 80px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    ">${label}</div>
+                </div>`;
+            });
+
+            html += '</div></div></div>';
+            return html;
+        }
+
+        // ============================================
+        // NEW DESIGN 4: FRACTION
+        // ============================================
+        function renderFractionDesign(stages, displayMode) {
+            const activeIndex = stages.findIndex(s => s.isActive);
+            const currentIndex = activeIndex >= 0 ? activeIndex : stages.findIndex(s => !s.isCompleted);
+            const currentStage = stages[currentIndex >= 0 ? currentIndex : stages.length - 1];
+            const currentStepNumber = (currentIndex >= 0 ? currentIndex : stages.length - 1) + 1;
+            const progressPercent = (currentStepNumber / stages.length) * 100;
+            const label = displayMode === 'stage' ? currentStage.stageName : currentStage.stageCategoryName;
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 10px;">';
+            
+            // Header row with fraction and label
+            html += `<div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #0078D4;
+                        flex-shrink: 0;
+                    ">${currentStepNumber}/${stages.length}</span>
+                    <span style="
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: #333;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    ">${label}</span>
+            </div>`;
+            
+            // Progress bar
+            html += `<div style="
+                position: relative;
+                width: 100%;
+                height: 8px;
+                background: #E1E1E1;
+                border-radius: 4px;
+                overflow: hidden;
+            ">
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    height: 100%;
+                    width: ${progressPercent}%;
+                    background: linear-gradient(to right, #107C10, #0078D4);
+                    transition: width 0.5s ease-in-out;
+                "></div>
+            </div></div>`;
+
             return html;
         }
 

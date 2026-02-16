@@ -1,20 +1,23 @@
 /**
  * BPF Design Components
  * 
- * 6 visual styles for displaying BPF stages:
+ * 10 visual styles for displaying BPF stages:
  * - Chevron: Classic ribbon arrows
  * - Circles: Connected circles with labels
  * - Pills: Rounded badge style
  * - Segmented: Single progress bar
- * - Timeline: Horizontal flow with arrows
  * - Stepper: Numbered boxes with connectors
+ * - Gradient: Progress bar with gradient fill
+ * - Path: Horizontal connected nodes
+ * - Line: Minimal track with circular markers
+ * - Fraction: Compact fraction display with progress bar
  */
 
 import * as React from 'react';
 import { IBPFDesignProps, IBPFStage } from '../../types';
 import { getStageColor, getStageLabel } from '../../utils/themeUtils';
 import { CheckmarkFilled } from '@fluentui/react-icons';
-import { makeStyles, shorthands, mergeClasses } from '@fluentui/react-components';
+import { makeStyles, mergeClasses } from '@fluentui/react-components';
 
 // ============================================
 // Shared Styles
@@ -74,7 +77,8 @@ const useChevronStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    ...shorthands.padding('0', '8px'),
+    paddingRight: '8px',
+    paddingLeft: '8px',
   },
 });
 
@@ -87,9 +91,20 @@ export const ChevronDesign: React.FC<IBPFDesignProps> = ({
 }) => {
   const styles = useChevronStyles();
   const sharedStyles = useSharedStyles();
+  
+  // Find active stage for accessibility
+  const activeStage = stages.find(s => s.isActive);
+  const completedCount = stages.filter(s => s.isCompleted).length;
 
   return (
-    <div className={mergeClasses(styles.container, isMobile && styles.containerMobile)}>
+    <div 
+      className={mergeClasses(styles.container, isMobile && styles.containerMobile)}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={stages.length}
+      aria-valuenow={completedCount}
+      aria-label={`Business process flow: ${completedCount} of ${stages.length} stages complete${activeStage ? `. Current stage: ${getStageLabel(activeStage.stageName, activeStage.stageCategoryName, displayMode)}` : ''}`}
+    >
       {stages.map((stage: IBPFStage, index: number) => {
         const isFirst = index === 0;
         const isLast = index === stages.length - 1;
@@ -97,11 +112,14 @@ export const ChevronDesign: React.FC<IBPFDesignProps> = ({
         const stageColor = getStageColor(status, colors);
         const label = getStageLabel(stage.stageName, stage.stageCategoryName, displayMode);
 
+        // Arrow size for the chevron point
+        const arrowSize = isMobile ? '12px' : '15px';
+        
         const clipPath = isFirst
-          ? 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)'
+          ? `polygon(0 0, calc(100% - ${arrowSize}) 0, 100% 50%, calc(100% - ${arrowSize}) 100%, 0 100%)`
           : isLast
-          ? 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%)'
-          : 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%)';
+          ? `polygon(0 0, 100% 0, 100% 100%, 0 100%, ${arrowSize} 50%)`
+          : `polygon(0 0, calc(100% - ${arrowSize}) 0, 100% 50%, calc(100% - ${arrowSize}) 100%, 0 100%, ${arrowSize} 50%)`;
 
         return (
           <div
@@ -115,10 +133,13 @@ export const ChevronDesign: React.FC<IBPFDesignProps> = ({
               backgroundColor: stageColor.bg,
               color: stageColor.text,
               clipPath,
-              marginLeft: isFirst ? 0 : '-5px',
-              zIndex: stages.length - index,
+              marginLeft: 0,
+              marginRight: isMobile ? '2px' : '4px',
+              zIndex: 1,
             }}
             title={`${stage.stageName} (${stage.stageCategoryName}) - ${status}`}
+            role="img"
+            aria-label={`${label}: ${status}${stage.isActive ? ' (current)' : ''}`}
           >
             <span className={styles.label}>{label}</span>
           </div>
@@ -137,7 +158,8 @@ const useCircleStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     width: '100%',
-    ...shorthands.padding('0', '4px'),
+    paddingRight: '4px',
+    paddingLeft: '4px',
   },
   stageWrapper: {
     display: 'flex',
@@ -152,7 +174,7 @@ const useCircleStyles = makeStyles({
   circle: {
     width: '32px',
     height: '32px',
-    ...shorthands.borderRadius('50%'),
+    borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -175,16 +197,16 @@ const useCircleStyles = makeStyles({
     whiteSpace: 'nowrap',
     width: '100%',
     maxWidth: '60px',
-    ...shorthands.padding('0', '2px'),
+    paddingRight: '2px',
+    paddingLeft: '2px',
   },
   connector: {
     flex: 1,
     height: '2px',
     minWidth: '8px',
-    ...shorthands.margin('0', '2px'),
   },
   connectorDesktop: {
-    marginTop: '-16px',
+    marginTop: '-20px',
   },
 });
 
@@ -247,7 +269,7 @@ const usePillStyles = makeStyles({
   container: {
     display: 'flex',
     alignItems: 'center',
-    ...shorthands.gap('6px'),
+    gap: '6px',
     width: '100%',
   },
   containerMobile: {
@@ -256,8 +278,8 @@ const usePillStyles = makeStyles({
   pill: {
     flex: 1,
     minWidth: 0,
-    ...shorthands.padding('6px', '12px'),
-    ...shorthands.borderRadius('999px'),
+    padding: '6px 12px',
+    borderRadius: '999px',
     fontSize: '12px',
     fontWeight: 600,
     textAlign: 'center',
@@ -266,7 +288,7 @@ const usePillStyles = makeStyles({
   },
   pillMobile: {
     flex: 'none',
-    ...shorthands.padding('4px', '8px'),
+    padding: '4px 8px',
     fontSize: '10px',
   },
   label: {
@@ -326,8 +348,8 @@ const useSegmentedStyles = makeStyles({
     alignItems: 'center',
     width: '100%',
     height: '32px',
-    ...shorthands.borderRadius('8px'),
-    ...shorthands.overflow('hidden'),
+    borderRadius: '8px',
+    overflow: 'hidden',
   },
   barMobile: {
     height: '24px',
@@ -342,6 +364,7 @@ const useSegmentedStyles = makeStyles({
     fontWeight: 600,
     transitionProperty: 'all',
     transitionDuration: '0.2s',
+    textAlign: 'center',
   },
   segmentMobile: {
     fontSize: '9px',
@@ -350,7 +373,8 @@ const useSegmentedStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    ...shorthands.padding('0', '4px'),
+    paddingRight: '4px',
+    paddingLeft: '4px',
   },
 });
 
@@ -401,109 +425,6 @@ export const SegmentedBarDesign: React.FC<IBPFDesignProps> = ({
 };
 
 // ============================================
-// DESIGN 5: TIMELINE
-// ============================================
-
-const useTimelineStyles = makeStyles({
-  container: {
-    display: 'flex',
-    alignItems: 'center',
-    width: '100%',
-    ...shorthands.gap('4px'),
-  },
-  containerMobile: {
-    flexWrap: 'wrap',
-  },
-  stage: {
-    display: 'flex',
-    alignItems: 'center',
-    ...shorthands.gap('6px'),
-    ...shorthands.padding('4px', '8px'),
-    ...shorthands.borderRadius('4px'),
-    transitionProperty: 'all',
-    transitionDuration: '0.2s',
-  },
-  dot: {
-    width: '10px',
-    height: '10px',
-    ...shorthands.borderRadius('50%'),
-    flexShrink: 0,
-  },
-  dotMobile: {
-    width: '8px',
-    height: '8px',
-  },
-  label: {
-    fontSize: '11px',
-    fontWeight: 500,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  labelMobile: {
-    fontSize: '10px',
-  },
-  arrow: {
-    fontSize: '10px',
-    flexShrink: 0,
-  },
-});
-
-export const TimelineDesign: React.FC<IBPFDesignProps> = ({
-  stages,
-  displayMode,
-  colors,
-  showPulse,
-  isMobile,
-}) => {
-  const styles = useTimelineStyles();
-  const sharedStyles = useSharedStyles();
-
-  return (
-    <div className={mergeClasses(styles.container, isMobile && styles.containerMobile)}>
-      {stages.map((stage: IBPFStage, index: number) => {
-        const isLast = index === stages.length - 1;
-        const status = stage.isCompleted ? 'completed' : stage.isActive ? 'active' : 'inactive';
-        const stageColor = getStageColor(status, colors);
-        const label = getStageLabel(stage.stageName, stage.stageCategoryName, displayMode);
-        const isInactive = status === 'inactive';
-
-        return (
-          <React.Fragment key={stage.stageId}>
-            <div
-              className={mergeClasses(
-                styles.stage,
-                stage.isActive && showPulse && sharedStyles.pulse
-              )}
-              style={{
-                backgroundColor: !isInactive ? `${stageColor.bg}20` : 'transparent',
-              }}
-              title={`${stage.stageName} (${stage.stageCategoryName}) - ${status}`}
-            >
-              <div
-                className={mergeClasses(styles.dot, isMobile && styles.dotMobile)}
-                style={{ backgroundColor: stageColor.bg }}
-              />
-              <span
-                className={mergeClasses(styles.label, isMobile && styles.labelMobile)}
-                style={{ color: isInactive ? colors.inactiveText : stageColor.bg }}
-              >
-                {label}
-              </span>
-            </div>
-            {!isLast && !isMobile && (
-              <span className={styles.arrow} style={{ color: colors.inactiveText }}>
-                →
-              </span>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-};
-
-// ============================================
 // DESIGN 6: STEPPER
 // ============================================
 
@@ -516,14 +437,14 @@ const useStepperStyles = makeStyles({
   stageWrapper: {
     display: 'flex',
     alignItems: 'center',
-    ...shorthands.gap('8px'),
+    gap: '8px',
     minWidth: 0,
     flexShrink: 0,
   },
   box: {
     width: '28px',
     height: '28px',
-    ...shorthands.borderRadius('4px'),
+    borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -554,7 +475,8 @@ const useStepperStyles = makeStyles({
     flex: 1,
     height: '2px',
     minWidth: '6px',
-    ...shorthands.margin('0', '4px'),
+    marginRight: '4px',
+    marginLeft: '4px',
   },
 });
 
@@ -614,6 +536,379 @@ export const StepperDesign: React.FC<IBPFDesignProps> = ({
 };
 
 // ============================================
+// DESIGN 7: GRADIENT BAR
+// ============================================
+
+const useGradientStyles = makeStyles({
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+  },
+  barContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '28px',
+    backgroundColor: '#E1E1E1',
+    borderRadius: '14px',
+    overflow: 'hidden',
+  },
+  barContainerMobile: {
+    height: '20px',
+  },
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '100%',
+    transitionProperty: 'width',
+    transitionDuration: '0.5s',
+    transitionTimingFunction: 'ease-in-out',
+  },
+  labelsContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: '8px',
+  },
+  labelWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    flex: 1,
+    gap: '4px',
+  },
+  label: {
+    fontSize: '11px',
+    fontWeight: 500,
+    textAlign: 'center',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    width: '100%',
+  },
+  labelMobile: {
+    fontSize: '9px',
+  },
+  indicator: {
+    width: '12px',
+    height: '12px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '8px',
+    lineHeight: '1',
+  },
+  indicatorMobile: {
+    width: '10px',
+    height: '10px',
+    fontSize: '6px',
+    lineHeight: '1',
+  },
+});
+
+export const GradientDesign: React.FC<IBPFDesignProps> = ({
+  stages,
+  displayMode,
+  colors,
+  showPulse,
+  isMobile,
+}) => {
+  const styles = useGradientStyles();
+  const sharedStyles = useSharedStyles();
+
+  // Calculate active stage index
+  const activeIndex = stages.findIndex(s => s.isActive);
+  const progressPercent = activeIndex >= 0 ? ((activeIndex + 1) / stages.length) * 100 : 0;
+
+  return (
+    <div className={styles.container}>
+      <div className={mergeClasses(styles.barContainer, isMobile && styles.barContainerMobile)}>
+        <div
+          className={styles.progressBar}
+          style={{
+            width: `${progressPercent}%`,
+            background: `linear-gradient(to right, ${colors.completed}, ${colors.active})`,
+          }}
+        />
+      </div>
+      <div className={styles.labelsContainer}>
+        {stages.map((stage: IBPFStage) => {
+          const status = stage.isCompleted ? 'completed' : stage.isActive ? 'active' : 'inactive';
+          const stageColor = getStageColor(status, colors);
+          const label = getStageLabel(stage.stageName, stage.stageCategoryName, displayMode);
+
+          return (
+            <div key={stage.stageId} className={styles.labelWrapper}>
+              <div
+                className={mergeClasses(
+                  styles.indicator,
+                  isMobile && styles.indicatorMobile,
+                  stage.isActive && showPulse && sharedStyles.pulse
+                )}
+                style={{
+                  backgroundColor: stageColor.bg,
+                  color: stageColor.text,
+                }}
+                title={`${stage.stageName} (${stage.stageCategoryName}) - ${status}`}
+              >
+                {stage.isCompleted ? '✓' : stage.isActive ? '●' : '○'}
+              </div>
+              <span
+                className={mergeClasses(styles.label, isMobile && styles.labelMobile)}
+                style={{ color: colors.inactiveText }}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// DESIGN 8: LINE + MARKERS
+// ============================================
+
+const useLineStyles = makeStyles({
+  container: {
+    position: 'relative',
+    width: '100%',
+    paddingTop: '28px',
+    paddingBottom: '0',
+  },
+  trackContainer: {
+    position: 'relative',
+    height: '4px',
+    backgroundColor: '#E1E1E1',
+    borderRadius: '2px',
+  },
+  progressLine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '100%',
+    borderRadius: '2px',
+    transitionProperty: 'width',
+    transitionDuration: '0.5s',
+    transitionTimingFunction: 'ease-in-out',
+  },
+  markersContainer: {
+    position: 'absolute',
+    top: '-10px',
+    left: 0,
+    right: 0,
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  markerWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  marker: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    transitionProperty: 'all',
+    transitionDuration: '0.2s',
+  },
+  markerActive: {
+    width: '28px',
+    height: '28px',
+    boxShadow: '0 0 0 4px rgba(0, 120, 212, 0.2)',
+  },
+  markerMobile: {
+    width: '20px',
+    height: '20px',
+  },
+  markerActiveMobile: {
+    width: '22px',
+    height: '22px',
+  },
+  label: {
+    marginTop: '36px',
+    fontSize: '11px',
+    fontWeight: 500,
+    textAlign: 'center',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '80px',
+  },
+  labelMobile: {
+    marginTop: '32px',
+    fontSize: '9px',
+    maxWidth: '60px',
+  },
+});
+
+export const LineDesign: React.FC<IBPFDesignProps> = ({
+  stages,
+  displayMode,
+  colors,
+  showPulse,
+  isMobile,
+}) => {
+  const styles = useLineStyles();
+  const sharedStyles = useSharedStyles();
+
+  // Calculate progress percentage
+  const activeIndex = stages.findIndex(s => s.isActive);
+  const progressPercent = activeIndex >= 0 ? (activeIndex / (stages.length - 1)) * 100 : 0;
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.trackContainer}>
+        <div
+          className={styles.progressLine}
+          style={{
+            width: `${progressPercent}%`,
+            background: `linear-gradient(to right, ${colors.completed}, ${colors.active})`,
+          }}
+        />
+        <div className={styles.markersContainer}>
+          {stages.map((stage: IBPFStage) => {
+            const status = stage.isCompleted ? 'completed' : stage.isActive ? 'active' : 'inactive';
+            const stageColor = getStageColor(status, colors);
+            const label = getStageLabel(stage.stageName, stage.stageCategoryName, displayMode);
+
+            return (
+              <div key={stage.stageId} className={styles.markerWrapper}>
+                <div
+                  className={mergeClasses(
+                    styles.marker,
+                    stage.isActive && styles.markerActive,
+                    isMobile && styles.markerMobile,
+                    stage.isActive && isMobile && styles.markerActiveMobile,
+                    stage.isActive && showPulse && sharedStyles.pulse
+                  )}
+                  style={{
+                    backgroundColor: stageColor.bg,
+                    color: stageColor.text,
+                    border: status === 'inactive' ? `2px solid ${colors.track}` : 'none',
+                  }}
+                  title={`${stage.stageName} (${stage.stageCategoryName}) - ${status}`}
+                >
+                  {stage.isCompleted ? <CheckmarkFilled fontSize={isMobile ? 10 : 12} /> : null}
+                </div>
+                <span
+                  className={mergeClasses(styles.label, isMobile && styles.labelMobile)}
+                  style={{ color: status === 'inactive' ? colors.inactiveText : stageColor.bg }}
+                >
+                  {label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// DESIGN 10: FRACTION
+// ============================================
+
+const useFractionStyles = makeStyles({
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    width: '100%',
+  },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  fraction: {
+    fontSize: '24px',
+    fontWeight: 700,
+    color: '#0078D4',
+    flexShrink: 0,
+  },
+  fractionMobile: {
+    fontSize: '18px',
+  },
+  currentLabel: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: '#333',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  currentLabelMobile: {
+    fontSize: '12px',
+  },
+  barContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '8px',
+    backgroundColor: '#E1E1E1',
+    borderRadius: '4px',
+    overflow: 'hidden',
+  },
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '100%',
+    transitionProperty: 'width',
+    transitionDuration: '0.5s',
+    transitionTimingFunction: 'ease-in-out',
+  },
+});
+
+export const FractionDesign: React.FC<IBPFDesignProps> = ({
+  stages,
+  displayMode,
+  colors,
+  isMobile,
+}) => {
+  const styles = useFractionStyles();
+
+  // Find active or last completed stage
+  const activeIndex = stages.findIndex(s => s.isActive);
+  const currentIndex = activeIndex >= 0 ? activeIndex : stages.findIndex(s => !s.isCompleted);
+  const currentStage = stages[currentIndex >= 0 ? currentIndex : stages.length - 1];
+  const currentStepNumber = (currentIndex >= 0 ? currentIndex : stages.length - 1) + 1;
+  const progressPercent = (currentStepNumber / stages.length) * 100;
+  const label = getStageLabel(currentStage.stageName, currentStage.stageCategoryName, displayMode);
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.headerRow}>
+        <span className={mergeClasses(styles.fraction, isMobile && styles.fractionMobile)}>
+          {currentStepNumber}/{stages.length}
+        </span>
+        <span className={mergeClasses(styles.currentLabel, isMobile && styles.currentLabelMobile)} title={label}>
+          {label}
+        </span>
+      </div>
+      <div className={styles.barContainer}>
+        <div
+          className={styles.progressBar}
+          style={{
+            width: `${progressPercent}%`,
+            background: `linear-gradient(to right, ${colors.completed}, ${colors.active})`,
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // DESIGN SELECTOR
 // ============================================
 
@@ -622,8 +917,10 @@ export const DESIGN_COMPONENTS = {
   circles: CircleDesign,
   pills: PillDesign,
   segmented: SegmentedBarDesign,
-  timeline: TimelineDesign,
   stepper: StepperDesign,
+  gradient: GradientDesign,
+  line: LineDesign,
+  fraction: FractionDesign,
 } as const;
 
 export function getDesignComponent(designStyle: string): React.FC<IBPFDesignProps> {

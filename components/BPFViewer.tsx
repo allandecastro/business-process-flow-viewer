@@ -5,16 +5,17 @@
  */
 
 import * as React from 'react';
-import { FluentProvider, webLightTheme, makeStyles, shorthands, tokens, Spinner, Button, Theme } from '@fluentui/react-components';
+import { FluentProvider, webLightTheme, makeStyles, tokens, Spinner, Button, Theme } from '@fluentui/react-components';
 import { ArrowClockwiseRegular, ErrorCircleRegular } from '@fluentui/react-icons';
 import { IBPFViewerProps } from '../types';
 import { BPFRow } from './BPFRow';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const useStyles = makeStyles({
   container: {
     width: '100%',
     height: '100%',
-    ...shorthands.overflow('auto'),
+    overflow: 'auto',
     backgroundColor: tokens.colorNeutralBackground1,
   },
   loadingContainer: {
@@ -22,16 +23,16 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shorthands.padding('24px'),
-    ...shorthands.gap('12px'),
+    padding: '24px',
+    gap: '12px',
   },
   errorContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shorthands.padding('24px'),
-    ...shorthands.gap('12px'),
+    padding: '24px',
+    gap: '12px',
     color: tokens.colorStatusDangerForeground1,
     textAlign: 'center',
   },
@@ -43,7 +44,7 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shorthands.padding('24px'),
+    padding: '24px',
     color: tokens.colorNeutralForeground2,
     textAlign: 'center',
     minHeight: '100px',
@@ -85,7 +86,7 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
   // Global loading state
   if (isLoading && records.length === 0) {
     return (
-      <div className={styles.loadingContainer}>
+      <div className={styles.loadingContainer} role="status" aria-live="polite">
         <Spinner size="medium" label="Loading records..." />
       </div>
     );
@@ -94,7 +95,7 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
   // Global error state
   if (error && records.length === 0) {
     return (
-      <div className={styles.errorContainer}>
+      <div className={styles.errorContainer} role="alert" aria-live="polite">
         <ErrorCircleRegular className={styles.errorIcon} />
         <div>{error}</div>
         {onRefresh && (
@@ -102,6 +103,7 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
             appearance="secondary"
             icon={<ArrowClockwiseRegular />}
             onClick={onRefresh}
+            aria-label="Retry loading records"
           >
             Retry
           </Button>
@@ -113,7 +115,7 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
   // Empty state
   if (records.length === 0) {
     return (
-      <div className={styles.emptyContainer}>
+      <div className={styles.emptyContainer} role="status">
         <div>No records to display</div>
       </div>
     );
@@ -121,16 +123,21 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
 
   // Records list
   return (
-    <div className={styles.recordsList}>
+    <div 
+      className={styles.recordsList}
+      role="list"
+      aria-label={`${records.length} record${records.length !== 1 ? 's' : ''} with business process flow`}
+    >
       {records.map((record) => (
-        <BPFRow
-          key={record.recordId}
-          record={record}
-          settings={settings}
-          colors={colors}
-          isMobile={isMobile}
-          onNavigate={onNavigate}
-        />
+        <div key={record.recordId} role="listitem">
+          <BPFRow
+            record={record}
+            settings={settings}
+            colors={colors}
+            isMobile={isMobile}
+            onNavigate={onNavigate}
+          />
+        </div>
       ))}
     </div>
   );
@@ -152,9 +159,11 @@ export const BPFViewer: React.FC<IBPFViewerWithProviderProps> = ({
 
   return (
     <FluentProvider theme={theme}>
-      <div className={styles.container}>
-        <BPFViewerInner {...props} />
-      </div>
+      <ErrorBoundary>
+        <div className={styles.container}>
+          <BPFViewerInner {...props} />
+        </div>
+      </ErrorBoundary>
     </FluentProvider>
   );
 };

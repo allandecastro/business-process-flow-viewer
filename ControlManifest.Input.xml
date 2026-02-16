@@ -44,8 +44,10 @@
       <value name="circles" display-name-key="Design_Circles">circles</value>
       <value name="pills" display-name-key="Design_Pills">pills</value>
       <value name="segmented" display-name-key="Design_Segmented">segmented</value>
-      <value name="timeline" display-name-key="Design_Timeline">timeline</value>
       <value name="stepper" display-name-key="Design_Stepper">stepper</value>
+      <value name="gradient" display-name-key="Design_Gradient">gradient</value>
+      <value name="line" display-name-key="Design_Line">line</value>
+      <value name="fraction" display-name-key="Design_Fraction">fraction</value>
     </property>
     
     <!-- Display Mode: Stage or Category -->

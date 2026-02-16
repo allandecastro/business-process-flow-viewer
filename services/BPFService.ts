@@ -36,8 +36,8 @@ const STAGE_CATEGORY_MAP: Record<number, StageCategory> = {
 // Cache timeout (5 minutes)
 const CACHE_TIMEOUT_MS = 5 * 60 * 1000;
 
-// Max records per batch (OData limit is usually 5000, but we keep it reasonable)
-const BATCH_SIZE = 50;
+// Max records per batch (keep it reasonable)
+const BATCH_SIZE = 10;
 
 export class BPFService {
   private webApi: WebApiClient;

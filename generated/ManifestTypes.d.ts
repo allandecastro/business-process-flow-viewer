@@ -5,7 +5,7 @@
 // Define IInputs and IOutputs Type. They should match with ControlManifest.
 export interface IInputs {
     parametersBPF: ComponentFramework.PropertyTypes.StringProperty;
-    designStyle: ComponentFramework.PropertyTypes.EnumProperty<"chevron" | "circles" | "pills" | "segmented" | "timeline" | "stepper">;
+    designStyle: ComponentFramework.PropertyTypes.EnumProperty<"chevron" | "circles" | "pills" | "segmented" | "stepper" | "gradient" | "line" | "fraction">;
     displayMode: ComponentFramework.PropertyTypes.EnumProperty<"stage" | "category">;
     recordNameSize: ComponentFramework.PropertyTypes.EnumProperty<"small" | "medium" | "large">;
     showEntityName: ComponentFramework.PropertyTypes.EnumProperty<"yes" | "no">;

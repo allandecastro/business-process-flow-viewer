@@ -8,20 +8,20 @@ import * as React from 'react';
 import { IBPFRowProps } from '../types';
 import { getDesignComponent } from './designs';
 import { RECORD_NAME_SIZES } from '../utils/themeUtils';
-import { makeStyles, shorthands, Spinner, tokens } from '@fluentui/react-components';
+import { makeStyles, Spinner, tokens } from '@fluentui/react-components';
 import { OpenRegular, ErrorCircleRegular } from '@fluentui/react-icons';
 
 const useStyles = makeStyles({
   row: {
-    ...shorthands.padding('12px'),
-    ...shorthands.borderBottom('1px', 'solid', tokens.colorNeutralStroke2),
+    padding: '12px',
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     transitionProperty: 'background-color',
     transitionDuration: '0.15s',
     cursor: 'default',
   },
   rowMobile: {
-    ...shorthands.padding('8px'),
+    padding: '8px',
   },
   rowClickable: {
     cursor: 'pointer',
@@ -34,7 +34,7 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: '8px',
-    ...shorthands.gap('8px'),
+    gap: '8px',
   },
   headerMobile: {
     flexDirection: 'column',
@@ -43,7 +43,7 @@ const useStyles = makeStyles({
   nameWrapper: {
     display: 'flex',
     alignItems: 'center',
-    ...shorthands.gap('8px'),
+    gap: '8px',
     minWidth: 0,
     flex: 1,
   },
@@ -55,17 +55,17 @@ const useStyles = makeStyles({
   },
   entityBadge: {
     fontSize: '10px',
-    ...shorthands.padding('2px', '6px'),
-    ...shorthands.borderRadius('4px'),
+    padding: '2px 6px',
+    borderRadius: '4px',
     backgroundColor: tokens.colorNeutralBackground3,
     color: tokens.colorNeutralForeground3,
-    ...shorthands.border('1px', 'solid', tokens.colorNeutralStroke2),
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
     flexShrink: 0,
   },
   metaWrapper: {
     display: 'flex',
     alignItems: 'center',
-    ...shorthands.gap('8px'),
+    gap: '8px',
     flexShrink: 0,
   },
   processName: {
@@ -80,14 +80,14 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shorthands.padding('8px'),
+    padding: '8px',
   },
   errorWrapper: {
     display: 'flex',
     alignItems: 'center',
-    ...shorthands.gap('8px'),
-    ...shorthands.padding('8px'),
-    ...shorthands.borderRadius('4px'),
+    gap: '8px',
+    padding: '8px',
+    borderRadius: '4px',
     backgroundColor: tokens.colorStatusDangerBackground1,
     color: tokens.colorStatusDangerForeground1,
     fontSize: '12px',
@@ -95,15 +95,15 @@ const useStyles = makeStyles({
   noBpfWrapper: {
     display: 'flex',
     alignItems: 'center',
-    ...shorthands.padding('8px'),
-    ...shorthands.borderRadius('4px'),
+    padding: '8px',
+    borderRadius: '4px',
     backgroundColor: tokens.colorNeutralBackground3,
     color: tokens.colorNeutralForeground3,
     fontSize: '12px',
   },
 });
 
-export const BPFRow: React.FC<IBPFRowProps> = ({
+export const BPFRow: React.FC<IBPFRowProps> = React.memo(({
   record,
   settings,
   colors,
@@ -140,7 +140,7 @@ export const BPFRow: React.FC<IBPFRowProps> = ({
     // Error state
     if (record.error) {
       return (
-        <div className={styles.errorWrapper}>
+        <div className={styles.errorWrapper} role="alert">
           <ErrorCircleRegular />
           <span>{record.error}</span>
         </div>
@@ -150,7 +150,7 @@ export const BPFRow: React.FC<IBPFRowProps> = ({
     // No BPF instance
     if (!record.bpfInstance || record.bpfInstance.stages.length === 0) {
       return (
-        <div className={styles.noBpfWrapper}>
+        <div className={styles.noBpfWrapper} role="status">
           <span>No active business process flow</span>
         </div>
       );
@@ -175,8 +175,9 @@ export const BPFRow: React.FC<IBPFRowProps> = ({
       }`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      role={settings.enableNavigation ? 'button' : undefined}
+      role={settings.enableNavigation ? 'button' : 'article'}
       tabIndex={settings.enableNavigation ? 0 : undefined}
+      aria-label={`${record.recordName} with business process flow`}
     >
       {/* Header */}
       <div className={`${styles.header} ${isMobile ? styles.headerMobile : ''}`}>
@@ -192,15 +193,21 @@ export const BPFRow: React.FC<IBPFRowProps> = ({
             {record.recordName}
           </span>
           {settings.showEntityName && (
-            <span className={styles.entityBadge}>{record.entityDisplayName}</span>
+            <span className={styles.entityBadge} aria-label={`Entity type: ${record.entityDisplayName}`}>
+              {record.entityDisplayName}
+            </span>
           )}
         </div>
         {!isMobile && (
           <div className={styles.metaWrapper}>
             {record.bpfInstance && (
-              <span className={styles.processName}>{record.bpfInstance.processName}</span>
+              <span className={styles.processName} aria-label={`Process: ${record.bpfInstance.processName}`}>
+                {record.bpfInstance.processName}
+              </span>
             )}
-            {settings.enableNavigation && <OpenRegular className={styles.navIcon} />}
+            {settings.enableNavigation && (
+              <OpenRegular className={styles.navIcon} aria-hidden="true" />
+            )}
           </div>
         )}
       </div>
@@ -209,4 +216,4 @@ export const BPFRow: React.FC<IBPFRowProps> = ({
       {renderBPFContent()}
     </div>
   );
-};
+});

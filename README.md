@@ -22,7 +22,7 @@ A modern PCF (Power Apps Component Framework) control that displays Business Pro
 | Theming | Custom colors only | **Platform theme support** |
 | Dataverse Calls | 1 per record | **Batched (N/50 calls)** |
 | Bundle Size | ~150KB | **~20KB** (shared libs) |
-| Design Options | 1 | **6 designs** |
+| Design Options | 1 | **8 designs** |
 | Responsive | No | **Yes** |
 
 ## 🎨 Design Styles
@@ -33,8 +33,10 @@ A modern PCF (Power Apps Component Framework) control that displays Business Pro
 | `circles` | Connected circles with labels |
 | `pills` | Rounded badge style |
 | `segmented` | Single segmented progress bar |
-| `timeline` | Horizontal flow with arrows |
 | `stepper` | Numbered boxes with connectors |
+| `gradient` | Gradient progress bar |
+| `line` | Linear progress track |
+| `fraction` | Fraction display (e.g. 2/5) |
 
 ## ⚡ Performance Optimizations
 
@@ -174,21 +176,37 @@ The `parametersBPF` property accepts a JSON configuration:
 
 ```
 BusinessProcessFlowViewer/
-├── index.ts                 # Main ReactControl
-├── ControlManifest.Input.xml
+├── index.ts                      # Main ReactControl entry point
+├── ControlManifest.Input.xml     # PCF manifest
 ├── components/
-│   ├── BPFViewer.tsx       # Main wrapper with FluentProvider
-│   ├── BPFRow.tsx          # Individual record row
+│   ├── BPFViewer.tsx             # Main wrapper with FluentProvider
+│   ├── BPFRow.tsx                # Individual record row
+│   ├── ErrorBoundary.tsx         # Error boundary with retry
+│   ├── index.ts                  # Barrel exports
 │   └── designs/
-│       └── index.tsx       # 6 design components
+│       ├── index.tsx             # Lazy-loaded design factory
+│       ├── ChevronDesign.tsx     # 8 design components
+│       ├── CircleDesign.tsx
+│       ├── PillDesign.tsx
+│       ├── SegmentedBarDesign.tsx
+│       ├── StepperDesign.tsx
+│       ├── GradientDesign.tsx
+│       ├── LineDesign.tsx
+│       ├── FractionDesign.tsx
+│       ├── shared/StageIcon.tsx  # Shared stage icon component
+│       └── hooks/
+│           └── useBPFDesignHelpers.ts
 ├── services/
-│   └── BPFService.ts       # Optimized WebAPI calls
+│   └── BPFService.ts             # Optimized batched WebAPI calls
 ├── types/
-│   └── index.ts            # TypeScript interfaces
+│   └── index.ts                  # TypeScript interfaces
 ├── utils/
-│   └── themeUtils.ts       # Platform theme extraction
-├── mocks/
-│   └── index.ts            # Mock data for testing
+│   ├── themeUtils.ts             # Platform theme extraction
+│   ├── debounce.ts               # Debounce/throttle utilities
+│   ├── sanitize.ts               # Input validation & OData escaping
+│   ├── errorMessages.ts          # Error codes & user-friendly messages
+│   └── configValidation.ts       # BPF config JSON validation
+├── __tests__/                    # 313 tests, 16 suites
 └── strings/
     └── BusinessProcessFlowViewer.1033.resx
 ```
@@ -257,9 +275,15 @@ npm run test:ci
 
 ### Current Test Coverage
 
-- **Components**: 100% (BPFViewer, BPFRow)
-- **Services**: 38% (BPFService)
-- **Overall**: 40%+ statements
+| Metric | Coverage |
+|--------|----------|
+| Statements | 96.23% |
+| Branches | 93.83% |
+| Functions | 84.67% |
+| Lines | 98.98% |
+
+- **313 tests** across 16 test suites
+- Coverage thresholds enforced: 80% statements/lines, 75% branches/functions
 
 ### Pre-commit Hooks
 
@@ -275,6 +299,12 @@ GitHub Actions automatically runs on every push and PR:
 - ✅ Tests with coverage reporting
 - ✅ Build verification
 - ✅ Multi-version testing (Node 18.x, 20.x)
+
+## 📋 Improvement Plan
+
+See [TODO.md](TODO.md) for the full prioritized improvement checklist (P0–P6).
+
+---
 
 ## 📝 License
 

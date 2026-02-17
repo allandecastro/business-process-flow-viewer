@@ -38,6 +38,10 @@ beforeAll(() => {
   };
 });
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 afterAll(() => {
   console.error = originalError;
 });

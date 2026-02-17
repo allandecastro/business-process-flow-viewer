@@ -21,7 +21,10 @@ import {
   WebApiClient,
 } from '../types';
 import { BPFError, ErrorCodes } from '../utils/errorMessages';
-import { isValidEntityName, isValidGuid } from '../utils/sanitize';
+import { isValidEntityName, isValidGuid, escapeODataValue } from '../utils/sanitize';
+
+// Request timeout (30 seconds)
+const REQUEST_TIMEOUT_MS = 30 * 1000;
 
 // Cache timeout (5 minutes)
 const CACHE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -179,11 +182,13 @@ export class BPFService {
         .join(' or ');
 
       try {
-        // OPTIMIZED: Single call for multiple records
+        // OPTIMIZED: Single call for multiple records with timeout protection
         // Select only needed columns
-        const response = await this.webApi.retrieveMultipleRecords(
-          bpfEntitySchemaName,
-          `?$filter=${filterConditions}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupFieldSchemaName}&$orderby=createdon desc`
+        const response = await this.fetchWithTimeout(
+          this.webApi.retrieveMultipleRecords(
+            bpfEntitySchemaName,
+            `?$filter=${filterConditions}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupFieldSchemaName}&$orderby=createdon desc`
+          )
         );
 
         // Group by record ID (take first/latest for each)
@@ -270,10 +275,12 @@ export class BPFService {
         return [];
       }
 
-      // OPTIMIZED: Select only needed columns
-      const response = await this.webApi.retrieveMultipleRecords(
-        'processstage',
-        `?$filter=_processid_value eq ${processId}&$select=processstageid,stagename,stagecategory&$orderby=stagecategory asc`
+      // OPTIMIZED: Select only needed columns, with timeout protection
+      const response = await this.fetchWithTimeout(
+        this.webApi.retrieveMultipleRecords(
+          'processstage',
+          `?$filter=_processid_value eq ${processId}&$select=processstageid,stagename,stagecategory&$orderby=stagecategory asc`
+        )
       );
 
       // Fetch category labels from metadata (cached)
@@ -335,9 +342,12 @@ export class BPFService {
     try {
       // Query workflow entity
       // category eq 4 means Business Process Flow
-      const response = await this.webApi.retrieveMultipleRecords(
-        'workflow',
-        `?$filter=uniquename eq '${bpfEntitySchemaName}' and category eq 4&$select=workflowid,name&$top=1`
+      const escapedName = escapeODataValue(bpfEntitySchemaName);
+      const response = await this.fetchWithTimeout(
+        this.webApi.retrieveMultipleRecords(
+          'workflow',
+          `?$filter=uniquename eq '${escapedName}' and category eq 4&$select=workflowid,name&$top=1`
+        )
       );
 
       if (response.entities && response.entities.length > 0) {
@@ -347,9 +357,11 @@ export class BPFService {
       }
 
       // Try alternative: query by name (some BPFs have different uniquename)
-      const altResponse = await this.webApi.retrieveMultipleRecords(
-        'workflow',
-        `?$filter=contains(uniquename,'${bpfEntitySchemaName}') and category eq 4&$select=workflowid,name&$top=1`
+      const altResponse = await this.fetchWithTimeout(
+        this.webApi.retrieveMultipleRecords(
+          'workflow',
+          `?$filter=contains(uniquename,'${escapedName}') and category eq 4&$select=workflowid,name&$top=1`
+        )
       );
 
       if (altResponse.entities && altResponse.entities.length > 0) {
@@ -393,10 +405,12 @@ export class BPFService {
     try {
       // Fetch attribute metadata for stagecategory field
       // Using Web API: GET [Organization URI]/api/data/v9.2/EntityDefinitions(LogicalName='processstage')/Attributes(LogicalName='stagecategory')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet
-      const response = await this.webApi.retrieveRecord(
-        'EntityDefinitions(LogicalName=\'processstage\')/Attributes(LogicalName=\'stagecategory\')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata',
-        '',
-        '?$select=LogicalName&$expand=OptionSet'
+      const response = await this.fetchWithTimeout(
+        this.webApi.retrieveRecord(
+          'EntityDefinitions(LogicalName=\'processstage\')/Attributes(LogicalName=\'stagecategory\')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata',
+          '',
+          '?$select=LogicalName&$expand=OptionSet'
+        )
       ) as AttributeMetadataResponse;
 
       const categoryMap = new Map<number, string>();
@@ -476,6 +490,23 @@ export class BPFService {
       }
     }
     return null;
+  }
+
+  /**
+   * Wrap a promise with a timeout to prevent indefinite hangs
+   */
+  private fetchWithTimeout<T>(promise: Promise<T>, timeoutMs: number = REQUEST_TIMEOUT_MS): Promise<T> {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const timeoutPromise = new Promise<T>((_resolve, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new BPFError('Request timed out', ErrorCodes.TIMEOUT)),
+        timeoutMs
+      );
+    });
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+      clearTimeout(timeoutId);
+    });
   }
 
   /**

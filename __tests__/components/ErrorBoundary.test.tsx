@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 // Component that throws an error for testing
@@ -127,5 +127,44 @@ describe('ErrorBoundary', () => {
 
     // Error UI should still be shown (ErrorBoundary state doesn't reset automatically)
     expect(screen.getByText(/Error displaying Business Process Flow/i)).toBeInTheDocument();
+  });
+
+  it('should render a retry button in error state', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowError />
+      </ErrorBoundary>
+    );
+
+    const retryButton = screen.getByRole('button', { name: /retry/i });
+    expect(retryButton).toBeInTheDocument();
+  });
+
+  it('should reset error state when retry is clicked', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByText(/Error displaying Business Process Flow/i)).toBeInTheDocument();
+
+    // Click retry - this resets the error state, but ThrowError will throw again
+    // causing getDerivedStateFromError to trigger again
+    const retryButton = screen.getByRole('button', { name: /retry/i });
+    fireEvent.click(retryButton);
+
+    // The error is shown again because ThrowError still throws
+    expect(screen.getByText(/Error displaying Business Process Flow/i)).toBeInTheDocument();
+  });
+
+  it('should have role=alert on error container', () => {
+    render(
+      <ErrorBoundary>
+        <ThrowError />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 });

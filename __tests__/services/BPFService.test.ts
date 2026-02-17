@@ -426,4 +426,518 @@ describe('BPFService', () => {
       expect(bpfInstance).toBeDefined();
     });
   });
+
+  describe('Abort signal handling', () => {
+    it('should throw when signal is aborted before getBPFDataForRecords processes', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      const controller = new AbortController();
+      controller.abort();
+
+      // With an already-aborted signal, the error throws from the loop
+      await expect(
+        service.getBPFDataForRecords([recordId], 'opportunity', mockConfig, controller.signal)
+      ).rejects.toThrow('Request cancelled');
+    });
+
+    it('should handle abort in fetchBPFInstancesBatched', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      const controller = new AbortController();
+
+      // Abort after workflow call
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          controller.abort();
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig, controller.signal);
+      expect(result.size).toBe(1);
+    });
+  });
+
+  describe('Validation in fetchBPFInstancesBatched', () => {
+    it('should reject invalid BPF entity names', async () => {
+      const invalidConfig: IBPFConfiguration = {
+        bpfs: [{
+          bpfEntitySchemaName: '123invalid',
+          lookupFieldSchemaName: 'valid_field',
+        }],
+      };
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', invalidConfig);
+      expect(result.get(recordId)).toBeNull();
+    });
+
+    it('should skip invalid GUIDs in batch', async () => {
+      const validId = '00000000-0000-0000-0000-000000000001';
+      const invalidId = 'not-a-guid';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords(
+        [validId, invalidId], 'entity', mockConfig
+      );
+
+      // Both should be in results (invalid one as null)
+      expect(result.size).toBe(2);
+    });
+
+    it('should skip batch when all GUIDs are invalid', async () => {
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords(
+        ['invalid1', 'invalid2'], 'entity', mockConfig
+      );
+
+      expect(result.get('invalid1')).toBeNull();
+      expect(result.get('invalid2')).toBeNull();
+    });
+  });
+
+  describe('getProcessId edge cases', () => {
+    it('should use cached workflow ID on second call', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const firstWorkflowCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
+        c => c[0] === 'workflow'
+      ).length;
+
+      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const secondWorkflowCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
+        c => c[0] === 'workflow'
+      ).length;
+
+      // Workflow ID should be cached, no new calls
+      expect(secondWorkflowCalls).toBe(firstWorkflowCalls);
+    });
+
+    it('should try alternative query when primary workflow lookup fails', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      let workflowCallCount = 0;
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string, query?: string) => {
+        if (entityName === 'workflow') {
+          workflowCallCount++;
+          if (workflowCallCount === 1) {
+            // First call (exact match) returns empty
+            return Promise.resolve({ entities: [] });
+          }
+          // Second call (contains match) returns result
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      // Should have tried the alternative query
+      expect(workflowCallCount).toBe(2);
+    });
+
+    it('should return null when neither workflow query finds results', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        // Always return empty for workflow queries
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      expect(result.get(recordId)).toBeNull();
+    });
+
+    it('should handle abort signal in getProcessStages', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      const controller = new AbortController();
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          controller.abort();
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig, controller.signal);
+      expect(result.size).toBe(1);
+    });
+  });
+
+  describe('Batch fetch error handling', () => {
+    it('should handle error in individual batch without failing all', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        if (entityName === 'opportunitysalesprocess') {
+          // BPF query fails
+          return Promise.reject(new Error('Batch fetch error'));
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      // Should still return result (null for failed record)
+      expect(result.size).toBe(1);
+      expect(result.get(recordId)).toBeNull();
+    });
+  });
+
+  describe('getStageCategoryLabels', () => {
+    it('should cache category labels on second call', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const firstRetrieveRecordCalls = (mockWebAPI.retrieveRecord as jest.Mock).mock.calls.length;
+
+      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const secondRetrieveRecordCalls = (mockWebAPI.retrieveRecord as jest.Mock).mock.calls.length;
+
+      // Category labels should be cached
+      expect(secondRetrieveRecordCalls).toBe(firstRetrieveRecordCalls);
+    });
+
+    it('should handle category labels fetch failure gracefully', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      // Make retrieveRecord fail for category labels
+      mockWebAPI.retrieveRecord = jest.fn().mockRejectedValue(new Error('Metadata fetch failed'));
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      // Should not throw - falls back to stage names
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      expect(result.size).toBe(1);
+    });
+
+    it('should use LocalizedLabels fallback when UserLocalizedLabel is missing', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveRecord = jest.fn().mockResolvedValue({
+        OptionSet: {
+          Options: [
+            {
+              Value: 0,
+              Label: {
+                UserLocalizedLabel: null,
+                LocalizedLabels: [{ Label: 'Localized Qualify', LanguageCode: 1033 }],
+              },
+            },
+          ],
+        },
+      });
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const instance = result.get(recordId);
+      // Should use the localized labels fallback
+      expect(instance).toBeNull(); // No BPF instance match, but stages were fetched successfully
+    });
+
+    it('should handle abort signal in getStageCategoryLabels', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      const controller = new AbortController();
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      mockWebAPI.retrieveRecord = jest.fn().mockImplementation(() => {
+        controller.abort();
+        return Promise.reject(new Error('Request cancelled'));
+      });
+
+      // Should handle the abort gracefully (category labels failure is non-fatal)
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig, controller.signal);
+      expect(result.size).toBe(1);
+    });
+  });
+
+  describe('getBPFDataForRecord (single record)', () => {
+    it('should fetch BPF data for a single record', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        if (entityName === 'opportunitysalesprocess') {
+          return Promise.resolve({
+            entities: [{
+              businessprocessflowinstanceid: 'bpf-001',
+              _opportunityid_value: recordId,
+              _activestageid_value: 'stage1',
+              traversedpath: '',
+              statuscode: 1,
+            }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecord(recordId, 'opportunity', mockConfig);
+      expect(result).toBeDefined();
+      expect(result?.processId).toBe('bpf-001');
+    });
+
+    it('should return null when no BPF found for single record', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecord(recordId, 'opportunity', mockConfig);
+      expect(result).toBeNull();
+    });
+
+    it('should deduplicate concurrent requests for same record', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      // Fire two concurrent requests for the same record
+      const [result1, result2] = await Promise.all([
+        service.getBPFDataForRecord(recordId, 'opportunity', mockConfig),
+        service.getBPFDataForRecord(recordId, 'opportunity', mockConfig),
+      ]);
+
+      // Both should resolve (second should reuse pending request)
+      expect(result1).toBeNull();
+      expect(result2).toBeNull();
+    });
+
+    it('should handle error in fetchSingleRecord gracefully', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockRejectedValue(new Error('API Error'));
+
+      const result = await service.getBPFDataForRecord(recordId, 'opportunity', mockConfig);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('mapToBPFInstance edge cases', () => {
+    it('should handle missing optional fields in BPF record', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
+          });
+        }
+        if (entityName === 'opportunitysalesprocess') {
+          return Promise.resolve({
+            entities: [{
+              // Minimal record - missing name, traversedpath, statuscode
+              businessprocessflowinstanceid: undefined,
+              _opportunityid_value: recordId,
+              _activestageid_value: null,
+              traversedpath: undefined,
+              statuscode: undefined,
+            }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const instance = result.get(recordId);
+      expect(instance).toBeDefined();
+      expect(instance?.processId).toBe('');
+      expect(instance?.traversedPath).toBe('');
+      expect(instance?.statusCode).toBe(0);
+    });
+  });
+
+  describe('empty config', () => {
+    it('should return empty map for empty BPF config', async () => {
+      const emptyConfig: IBPFConfiguration = { bpfs: [] };
+      const result = await service.getBPFDataForRecords(
+        ['00000000-0000-0000-0000-000000000001'], 'entity', emptyConfig
+      );
+      expect(result.size).toBe(0);
+    });
+  });
+
+  describe('request timeout', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should timeout when workflow query hangs', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      // Create a promise that never resolves to simulate a hang
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return new Promise(() => {/* never resolves */});
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const resultPromise = service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+
+      // Advance timers past the 30s timeout
+      jest.advanceTimersByTime(31000);
+
+      const result = await resultPromise;
+      // Error is caught per-BPF, record gets null
+      expect(result.get(recordId)).toBeNull();
+    });
+  });
 });

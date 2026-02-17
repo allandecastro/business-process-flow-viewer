@@ -26,10 +26,12 @@ describe('Accessibility Tests (WCAG 2.1 AA)', () => {
     displayMode: 'stage',
     recordNameSize: 'medium',
     showEntityName: true,
-    enableNavigation: true,
+    enableNavigation: false,
     showPulseAnimation: true,
     usePlatformTheme: false,
   };
+
+  const navSettings = { ...mockSettings, enableNavigation: true as const };
 
   const mockColors = createMockStageColors();
 
@@ -288,9 +290,10 @@ describe('Accessibility Tests (WCAG 2.1 AA)', () => {
       const { container } = render(
         <BPFRow
           record={record}
-          settings={mockSettings}
+          settings={navSettings}
           colors={mockColors}
           isMobile={false}
+          onNavigate={jest.fn()}
         />
       );
 
@@ -326,9 +329,10 @@ describe('Accessibility Tests (WCAG 2.1 AA)', () => {
       const { getByRole } = render(
         <BPFRow
           record={record}
-          settings={mockSettings}
+          settings={navSettings}
           colors={mockColors}
           isMobile={false}
+          onNavigate={jest.fn()}
         />
       );
 

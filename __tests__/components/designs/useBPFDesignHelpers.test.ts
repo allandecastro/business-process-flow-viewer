@@ -168,6 +168,35 @@ describe('useBPFDesignHelpers', () => {
       expect(result.current.a11yMetadata.activeStage?.stageId).toBe('stage2');
       expect(result.current.a11yMetadata.activeStage?.stageName).toBe('Develop');
     });
+
+    it('should compute activeStageIndex correctly', () => {
+      const stages = [
+        createMockBPFStage('stage1', 'Qualify', 'Qualify', 0, 0, true, false),
+        createMockBPFStage('stage2', 'Develop', 'Develop', 1, 1, false, true),
+        createMockBPFStage('stage3', 'Propose', 'Propose', 2, 2, false, false),
+      ];
+
+      const { result } = renderHook(() =>
+        useBPFDesignHelpers(stages, displayMode, mockColors, true)
+      );
+
+      expect(result.current.a11yMetadata.activeStageIndex).toBe(1);
+    });
+
+    it('should default activeStageIndex to last stage when no active stage', () => {
+      const stages = [
+        createMockBPFStage('stage1', 'Qualify', 'Qualify', 0, 0, true, false),
+        createMockBPFStage('stage2', 'Develop', 'Develop', 1, 1, true, false),
+        createMockBPFStage('stage3', 'Propose', 'Propose', 2, 2, false, false),
+      ];
+
+      const { result } = renderHook(() =>
+        useBPFDesignHelpers(stages, displayMode, mockColors, true)
+      );
+
+      // No active stage, should fall back to last index
+      expect(result.current.a11yMetadata.activeStageIndex).toBe(2);
+    });
   });
 
   describe('display mode', () => {

@@ -16,10 +16,12 @@ const mockSettings: IControlSettings = {
   displayMode: 'stage',
   recordNameSize: 'medium',
   showEntityName: true,
-  enableNavigation: true,
+  enableNavigation: false,
   showPulseAnimation: true,
   usePlatformTheme: false,
 };
+
+const navSettings = { ...mockSettings, enableNavigation: true as const };
 
 const mockColors = createMockStageColors();
 
@@ -172,7 +174,7 @@ describe('BPFRow', () => {
     renderWithProviders(
       <BPFRow
         record={record}
-        settings={mockSettings}
+        settings={navSettings}
         colors={mockColors}
         isMobile={false}
         onNavigate={mockOnNavigate}
@@ -212,7 +214,7 @@ describe('BPFRow', () => {
     renderWithProviders(
       <BPFRow
         record={record}
-        settings={mockSettings}
+        settings={navSettings}
         colors={mockColors}
         isMobile={false}
         onNavigate={mockOnNavigate}
@@ -253,7 +255,7 @@ describe('BPFRow', () => {
     renderWithProviders(
       <BPFRow
         record={record}
-        settings={mockSettings}
+        settings={navSettings}
         colors={mockColors}
         isMobile={false}
         onNavigate={mockOnNavigate}

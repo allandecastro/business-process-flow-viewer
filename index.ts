@@ -26,6 +26,7 @@ import {
 } from './utils/themeUtils';
 import { getErrorMessage, BPFError, ErrorCodes } from './utils/errorMessages';
 import { validateBPFConfiguration } from './utils/configValidation';
+import { isValidEntityName, isValidGuid } from './utils/sanitize';
 
 export class BusinessProcessFlowViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
   private context: ComponentFramework.Context<IInputs>;
@@ -43,6 +44,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
   // Request cancellation support
   private abortController: AbortController | null = null;
+  private requestGeneration: number = 0;
 
   /**
    * Initialize the control
@@ -185,6 +187,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       this.abortController.abort();
     }
     this.abortController = new AbortController();
+    const currentGeneration = ++this.requestGeneration;
 
     const recordIds = dataset.sortedRecordIds || [];
     if (recordIds.length === 0) {
@@ -206,13 +209,13 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     for (const recordId of recordIds) {
       const record = dataset.records[recordId];
       const primaryColumn = dataset.columns.find((c: ComponentFramework.PropertyHelper.DataSetApi.Column) => c.isPrimary);
-      const recordName = primaryColumn 
+      const recordName = primaryColumn
         ? record.getFormattedValue(primaryColumn.name) || recordId
         : recordId;
 
       // Check if already fetched
       const existingRecord = this.records.find(r => r.recordId === recordId);
-      
+
       if (existingRecord && this.fetchedRecordIds.has(recordId)) {
         // Reuse existing data
         updatedRecords.push(existingRecord);
@@ -244,6 +247,11 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
           this.abortController.signal
         );
 
+        // Discard stale results if a newer request has started
+        if (currentGeneration !== this.requestGeneration) {
+          return;
+        }
+
         // Update records with fetched data
         this.records = this.records.map(record => {
           if (newRecordIds.includes(record.recordId)) {
@@ -258,6 +266,11 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
         });
 
       } catch (e) {
+        // Discard stale errors if a newer request has started
+        if (currentGeneration !== this.requestGeneration) {
+          return;
+        }
+
         console.error('[BPFViewer] Failed to fetch BPF data:', e);
 
         // Get user-friendly error message
@@ -298,33 +311,44 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
    * Get entity display name (would normally use Utility.getEntityMetadata)
    */
   private getEntityDisplayName(entityName: string): string {
-    // Capitalize first letter as fallback
-    // In production, use context.utils.getEntityMetadata
-    const displayNames: Record<string, string> = {
-      opportunity: 'Opportunity',
-      lead: 'Lead',
+    // Well-known Dataverse entities with non-obvious display names
+    const knownNames: Record<string, string> = {
       incident: 'Case',
-      account: 'Account',
-      contact: 'Contact',
-      quote: 'Quote',
       salesorder: 'Order',
-      invoice: 'Invoice',
     };
-    return displayNames[entityName.toLowerCase()] || 
-           entityName.charAt(0).toUpperCase() + entityName.slice(1);
+
+    const lower = entityName.toLowerCase();
+    if (knownNames[lower]) {
+      return knownNames[lower];
+    }
+
+    // Smart fallback: split camelCase/underscores and capitalize each word
+    return entityName
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(/[-_ ]/)
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   /**
    * Handle navigation to record
    */
   private handleNavigate(entityName: string, recordId: string): void {
-    if (this.context.navigation) {
-      this.context.navigation.openForm({
-        entityName,
-        entityId: recordId,
-        openInNewWindow: false,
-      });
+    if (!entityName || !recordId || !this.context.navigation) {
+      return;
     }
+
+    if (!isValidEntityName(entityName) || !isValidGuid(recordId)) {
+      console.warn('[BPFViewer] Invalid entity name or record ID format');
+      return;
+    }
+
+    this.context.navigation.openForm({
+      entityName,
+      entityId: recordId,
+      openInNewWindow: false,
+    });
   }
 
   /**

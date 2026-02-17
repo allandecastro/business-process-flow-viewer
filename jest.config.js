@@ -3,6 +3,9 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>'],
   testMatch: ['**/__tests__/**/*.test.ts?(x)'],
+  // Force exit after tests complete — needed because BPFViewer's useIsMobile
+  // hook creates debounced resize listeners that keep timers alive in jsdom
+  forceExit: true,
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
@@ -20,10 +23,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 60,
-      functions: 60,
-      lines: 60,
-      statements: 60,
+      branches: 75,
+      functions: 75,
+      lines: 80,
+      statements: 80,
     },
   },
   transform: {
@@ -39,9 +42,4 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(@fluentui|@griffel|@swc)/)',
   ],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true,
-    },
-  },
 };

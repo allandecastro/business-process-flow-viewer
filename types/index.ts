@@ -105,13 +105,23 @@ export interface IBPFViewerProps {
   onRefresh?: () => void;
 }
 
-export interface IBPFRowProps {
+interface IBPFRowBaseProps {
   record: IRecordBPFData;
-  settings: IControlSettings;
   colors: IStageColors;
   isMobile: boolean;
-  onNavigate?: (entityName: string, recordId: string) => void;
 }
+
+interface IBPFRowNavigableProps extends IBPFRowBaseProps {
+  settings: IControlSettings & { enableNavigation: true };
+  onNavigate: (entityName: string, recordId: string) => void;
+}
+
+interface IBPFRowStaticProps extends IBPFRowBaseProps {
+  settings: IControlSettings & { enableNavigation: false };
+  onNavigate?: undefined;
+}
+
+export type IBPFRowProps = IBPFRowNavigableProps | IBPFRowStaticProps;
 
 export interface IBPFDesignProps {
   stages: IBPFStage[];

@@ -32,6 +32,7 @@ export interface IStageMetadata {
  */
 export interface IA11yMetadata {
   activeStage: IBPFStage | undefined;
+  activeStageIndex: number;
   completedCount: number;
   totalCount: number;
   progressPercent: number;
@@ -100,13 +101,15 @@ export function useBPFDesignHelpers(
 
   // Memoized accessibility metadata
   const a11yMetadata = useMemo<IA11yMetadata>(() => {
-    const activeStage = stages.find((s) => s.isActive);
+    const activeStageIdx = stages.findIndex((s) => s.isActive);
+    const activeStage = activeStageIdx >= 0 ? stages[activeStageIdx] : undefined;
     const completedCount = stages.filter((s) => s.isCompleted).length;
     const totalCount = stages.length;
     const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
     return {
       activeStage,
+      activeStageIndex: activeStageIdx >= 0 ? activeStageIdx : totalCount - 1,
       completedCount,
       totalCount,
       progressPercent,

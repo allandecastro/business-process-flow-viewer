@@ -136,13 +136,22 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
     >
       {records.map((record) => (
         <div key={record.recordId} role="listitem">
-          <BPFRow
-            record={record}
-            settings={settings}
-            colors={colors}
-            isMobile={isMobile}
-            onNavigate={onNavigate}
-          />
+          {settings.enableNavigation && onNavigate ? (
+            <BPFRow
+              record={record}
+              settings={{ ...settings, enableNavigation: true as const }}
+              colors={colors}
+              isMobile={isMobile}
+              onNavigate={onNavigate}
+            />
+          ) : (
+            <BPFRow
+              record={record}
+              settings={{ ...settings, enableNavigation: false as const }}
+              colors={colors}
+              isMobile={isMobile}
+            />
+          )}
         </div>
       ))}
     </div>

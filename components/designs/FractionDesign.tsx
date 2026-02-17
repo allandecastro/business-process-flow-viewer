@@ -66,9 +66,7 @@ const FractionDesignComponent: React.FC<IBPFDesignProps> = ({
   const { a11yMetadata } = useBPFDesignHelpers(stages, displayMode, colors, false);
 
   const currentStage = a11yMetadata.activeStage || stages[stages.length - 1];
-  const currentStepNumber = currentStage
-    ? stages.findIndex((s) => s.stageId === currentStage.stageId) + 1
-    : stages.length;
+  const currentStepNumber = a11yMetadata.activeStageIndex + 1;
   const progressPercent = a11yMetadata.progressPercent;
   const label = getStageLabel(currentStage.stageName, currentStage.stageCategoryName, displayMode);
 

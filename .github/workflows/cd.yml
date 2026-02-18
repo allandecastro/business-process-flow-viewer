@@ -83,11 +83,22 @@ jobs:
         run: |
           if (Test-Path out) { Remove-Item -Recurse -Force out }
 
+      - name: Build PCF control
+        run: npm run build
+
+      - name: Restructure output for Solution packaging
+        run: |
+          # MSBuild Solution targets expect each control in its own subdirectory
+          $src = "out/controls"
+          $dest = "$src/BusinessProcessFlowViewer"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Get-ChildItem $src -Exclude "BusinessProcessFlowViewer" | Move-Item -Destination $dest
+
       - name: Restore Solution NuGet packages
         run: dotnet restore Solution/Solution.cdsproj
 
       - name: Build managed solution
-        run: dotnet build Solution/Solution.cdsproj -c Release --no-restore
+        run: dotnet build Solution/Solution.cdsproj -c Release --no-restore /p:BuildProjectReferences=false
 
       # ── Upload artifacts (always) ──
       - name: Upload managed solution artifact

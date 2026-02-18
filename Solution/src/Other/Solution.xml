@@ -8,7 +8,7 @@
     <Descriptions>
       <Description description="A modern PCF control that displays Business Process Flow stages in grid and subgrid views." languagecode="1033" />
     </Descriptions>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Managed>2</Managed>
     <Publisher>
       <UniqueName>AllanDeCastro</UniqueName>

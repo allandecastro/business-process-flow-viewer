@@ -4,21 +4,15 @@
  * This file exports all 8 visual styles for displaying BPF stages.
  * Each design is now in its own file for better organization and maintainability.
  *
- * All designs use the shared useBPFDesignHelpers hook to:
- * - Eliminate code duplication (~200 lines saved)
- * - Centralize business logic
- * - Improve performance with memoization
- * - Ensure consistency across designs
- *
- * Lazy loading with React.lazy improves initial load performance by loading
- * design components only when needed.
+ * ChevronDesign is imported eagerly (static import) since it's the default
+ * design style. The remaining 7 designs are lazy-loaded on demand.
  */
 
 import * as React from 'react';
 import type { IBPFDesignProps } from '../../types';
+import { ChevronDesign } from './ChevronDesign';
 
-// Lazy load design components for better performance
-const ChevronDesign = React.lazy(() => import('./ChevronDesign').then(m => ({ default: m.ChevronDesign })));
+// Lazy load non-default design components
 const CircleDesign = React.lazy(() => import('./CircleDesign').then(m => ({ default: m.CircleDesign })));
 const PillDesign = React.lazy(() => import('./PillDesign').then(m => ({ default: m.PillDesign })));
 const SegmentedBarDesign = React.lazy(() => import('./SegmentedBarDesign').then(m => ({ default: m.SegmentedBarDesign })));
@@ -27,7 +21,6 @@ const GradientDesign = React.lazy(() => import('./GradientDesign').then(m => ({ 
 const LineDesign = React.lazy(() => import('./LineDesign').then(m => ({ default: m.LineDesign })));
 const FractionDesign = React.lazy(() => import('./FractionDesign').then(m => ({ default: m.FractionDesign })));
 
-// Export all design components (lazy loaded)
 export {
   ChevronDesign,
   CircleDesign,
@@ -39,13 +32,14 @@ export {
   FractionDesign,
 };
 
+/** Return type for getDesignComponent — covers both eager and lazy components */
+type DesignComponentType = React.FC<IBPFDesignProps> | React.LazyExoticComponent<React.FC<IBPFDesignProps>>;
+
 /**
- * Get design component by style name
- *
- * @param designStyle - Name of the design style
- * @returns React lazy component for the specified design
+ * Get design component by style name.
+ * Returns ChevronDesign (eagerly loaded) for the default case.
  */
-export function getDesignComponent(designStyle: string): React.LazyExoticComponent<React.FC<IBPFDesignProps>> {
+export function getDesignComponent(designStyle: string): DesignComponentType {
   const normalizedStyle = designStyle.toLowerCase().trim();
 
   switch (normalizedStyle) {
@@ -67,7 +61,6 @@ export function getDesignComponent(designStyle: string): React.LazyExoticCompone
     case 'fraction':
       return FractionDesign;
     default:
-      // Default to Chevron if unknown style
       return ChevronDesign;
   }
 }

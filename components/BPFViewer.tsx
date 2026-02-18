@@ -70,7 +70,10 @@ const useIsMobile = (): boolean => {
 
     // Debounced resize listener (prevents excessive re-renders)
     window.addEventListener('resize', debouncedCheck);
-    return () => window.removeEventListener('resize', debouncedCheck);
+    return () => {
+      window.removeEventListener('resize', debouncedCheck);
+      debouncedCheck.cancel();
+    };
   }, []);
 
   return isMobile;

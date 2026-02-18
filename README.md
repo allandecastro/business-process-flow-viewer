@@ -103,18 +103,35 @@ npm start
 
 ### Package for Deployment
 
+A ready-to-build `Solution/` project is included in the repo:
+
 ```bash
-# Create Solution folder at same level as BusinessProcessFlowViewer
-mkdir Solution
-cd Solution
-pac solution init --publisher-name AllanDeCastro --publisher-prefix adc
+# Restore NuGet packages and build managed + unmanaged solution zips
+npm run solution:restore
+npm run solution:build
 
-# Add reference to PCF project
-pac solution add-reference --path ../BusinessProcessFlowViewer
-
-# Build managed solution
-msbuild /t:build /restore /p:configuration=Release
+# Output: Solution/bin/Release/*.zip
 ```
+
+Or use `dotnet` directly:
+
+```bash
+dotnet build Solution/Solution.cdsproj -c Release
+```
+
+> **CI/CD:** The [CD workflow](.github/workflows/cd.yml) runs automatically on every GitHub release and produces downloadable solution artifacts.
+
+### Deploying to Dataverse
+
+```bash
+# Authenticate (one-time setup per environment)
+pac auth create --url https://your-org.crm.dynamics.com
+
+# Import the managed solution
+pac solution import --path Solution/bin/Release/BusinessProcessFlowViewer_managed.zip
+```
+
+See [.env.example](.env.example) for environment configuration.
 
 ## ⚙️ Configuration
 
@@ -184,7 +201,7 @@ BusinessProcessFlowViewer/
 │   ├── ErrorBoundary.tsx         # Error boundary with retry
 │   ├── index.ts                  # Barrel exports
 │   └── designs/
-│       ├── index.tsx             # Lazy-loaded design factory
+│       ├── index.tsx             # Design factory (ChevronDesign eager, rest lazy)
 │       ├── ChevronDesign.tsx     # 8 design components
 │       ├── CircleDesign.tsx
 │       ├── PillDesign.tsx
@@ -206,7 +223,7 @@ BusinessProcessFlowViewer/
 │   ├── sanitize.ts               # Input validation & OData escaping
 │   ├── errorMessages.ts          # Error codes & user-friendly messages
 │   └── configValidation.ts       # BPF config JSON validation
-├── __tests__/                    # 313 tests, 16 suites
+├── __tests__/                    # 340+ tests, 16 suites
 └── strings/
     └── BusinessProcessFlowViewer.1033.resx
 ```
@@ -275,15 +292,11 @@ npm run test:ci
 
 ### Current Test Coverage
 
-| Metric | Coverage |
-|--------|----------|
-| Statements | 96.23% |
-| Branches | 93.83% |
-| Functions | 84.67% |
-| Lines | 98.98% |
+Coverage is generated automatically by CI on every push and PR.
+View the latest coverage summary in the [CI workflow run](https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml) job summary.
 
-- **313 tests** across 16 test suites
 - Coverage thresholds enforced: 80% statements/lines, 75% branches/functions
+- Run `npm run test:coverage` locally to generate a detailed HTML report in `coverage/`
 
 ### Pre-commit Hooks
 
@@ -294,11 +307,32 @@ This project uses Husky and lint-staged to enforce code quality:
 
 ### CI/CD Pipeline
 
-GitHub Actions automatically runs on every push and PR:
-- ✅ Linting with ESLint
-- ✅ Tests with coverage reporting
-- ✅ Build verification
-- ✅ Multi-version testing (Node 18.x, 20.x)
+**CI** (every push and PR):
+- Linting with ESLint
+- Tests with coverage reporting
+- Build verification
+- Multi-version testing (Node 18.x, 20.x)
+
+**CD** (on version tag push):
+- Syncs version across `package.json`, `ControlManifest.Input.xml`, and `Solution.xml`
+- Builds the managed + unmanaged Dataverse solution `.zip`
+- Creates a GitHub release with the solution attached
+
+### Releasing a New Version
+
+```bash
+# 1. Bump version in all project files
+npm run version:bump patch   # or: minor, major, 2.1.0
+
+# 2. Commit and tag
+git add -A && git commit -m "chore: bump version to 2.0.1"
+git tag v2.0.1
+
+# 3. Push — this triggers the CD workflow automatically
+git push && git push --tags
+```
+
+The CD workflow will build the solution, create a GitHub release at `v2.0.1`, and attach the managed `.zip` for import into Dataverse.
 
 ## 📋 Improvement Plan
 

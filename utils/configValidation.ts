@@ -48,8 +48,7 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cfg = config as any;
+  const cfg = config as Record<string, unknown>;
 
   // Validate bpfs array exists
   if (!('bpfs' in cfg)) {
@@ -80,8 +79,7 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
   }
 
   // Validate each BPF definition
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cfg.bpfs.forEach((bpf: any, index: number) => {
+  cfg.bpfs.forEach((bpf: unknown, index: number) => {
     // Validate it's an object
     if (!bpf || typeof bpf !== 'object') {
       errors.push({
@@ -91,18 +89,20 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
       return;
     }
 
+    const entry = bpf as Record<string, unknown>;
+
     // Validate bpfEntitySchemaName
-    if (!bpf.bpfEntitySchemaName) {
+    if (!entry.bpfEntitySchemaName) {
       errors.push({
         field: `bpfs[${index}].bpfEntitySchemaName`,
         message: 'Required field is missing',
       });
-    } else if (typeof bpf.bpfEntitySchemaName !== 'string') {
+    } else if (typeof entry.bpfEntitySchemaName !== 'string') {
       errors.push({
         field: `bpfs[${index}].bpfEntitySchemaName`,
         message: 'Must be a string',
       });
-    } else if (!isValidEntityName(bpf.bpfEntitySchemaName)) {
+    } else if (!isValidEntityName(entry.bpfEntitySchemaName)) {
       errors.push({
         field: `bpfs[${index}].bpfEntitySchemaName`,
         message:
@@ -111,17 +111,17 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
     }
 
     // Validate lookupFieldSchemaName
-    if (!bpf.lookupFieldSchemaName) {
+    if (!entry.lookupFieldSchemaName) {
       errors.push({
         field: `bpfs[${index}].lookupFieldSchemaName`,
         message: 'Required field is missing',
       });
-    } else if (typeof bpf.lookupFieldSchemaName !== 'string') {
+    } else if (typeof entry.lookupFieldSchemaName !== 'string') {
       errors.push({
         field: `bpfs[${index}].lookupFieldSchemaName`,
         message: 'Must be a string',
       });
-    } else if (!isValidEntityName(bpf.lookupFieldSchemaName)) {
+    } else if (!isValidEntityName(entry.lookupFieldSchemaName)) {
       errors.push({
         field: `bpfs[${index}].lookupFieldSchemaName`,
         message:
@@ -131,7 +131,7 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
 
     // Check for unexpected properties (security)
     const allowedProps = ['bpfEntitySchemaName', 'lookupFieldSchemaName'];
-    const actualProps = Object.keys(bpf);
+    const actualProps = Object.keys(entry);
     const unexpectedProps = actualProps.filter((p) => !allowedProps.includes(p));
 
     if (unexpectedProps.length > 0) {
@@ -150,7 +150,7 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
   return {
     isValid: true,
     errors: [],
-    config: cfg as IBPFConfiguration,
+    config: cfg as unknown as IBPFConfiguration,
   };
 }
 

@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { FluentProvider, webLightTheme } from '@fluentui/react-components';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
+
+function renderWithFluent(ui: React.ReactElement) {
+  return render(
+    <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>
+  );
+}
 
 // Component that throws an error for testing
 const ThrowError: React.FC<{ shouldThrow?: boolean }> = ({ shouldThrow = true }) => {
@@ -22,7 +29,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should render children when there is no error', () => {
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <div data-testid="child">Child content</div>
       </ErrorBoundary>
@@ -33,7 +40,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should render default error UI when child throws error', () => {
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
@@ -60,7 +67,7 @@ describe('ErrorBoundary', () => {
   it('should log error to console', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error');
 
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
@@ -80,7 +87,7 @@ describe('ErrorBoundary', () => {
       throw error;
     };
 
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowErrorWithoutMessage />
       </ErrorBoundary>
@@ -90,26 +97,22 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('An unexpected error occurred')).toBeInTheDocument();
   });
 
-  it('should have proper styling for error container', () => {
-    render(
+  it('should render error container with Fluent styles and role=alert', () => {
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
     );
 
-    const errorContainer = screen.getByText(/Error displaying Business Process Flow/i).parentElement;
-    expect(errorContainer).toHaveStyle({
-      padding: '12px',
-      backgroundColor: '#FEF0F0',
-      border: '1px solid #D13438',
-      borderRadius: '4px',
-      color: '#A4262C',
-      fontSize: '12px',
-    });
+    const alertContainer = screen.getByRole('alert');
+    expect(alertContainer).toBeInTheDocument();
+    // Fluent makeStyles applies CSS classes instead of inline styles
+    expect(alertContainer.className).toBeTruthy();
+    expect(alertContainer).toHaveTextContent(/Error displaying Business Process Flow/i);
   });
 
   it('should recover when error is fixed', () => {
-    const { rerender } = render(
+    const { rerender } = renderWithFluent(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
@@ -120,9 +123,11 @@ describe('ErrorBoundary', () => {
     // Note: ErrorBoundary doesn't automatically recover in React
     // This test shows the error UI persists even after children change
     rerender(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={false} />
-      </ErrorBoundary>
+      <FluentProvider theme={webLightTheme}>
+        <ErrorBoundary>
+          <ThrowError shouldThrow={false} />
+        </ErrorBoundary>
+      </FluentProvider>
     );
 
     // Error UI should still be shown (ErrorBoundary state doesn't reset automatically)
@@ -130,7 +135,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should render a retry button in error state', () => {
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
@@ -141,7 +146,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should reset error state when retry is clicked', () => {
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
@@ -159,7 +164,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should have role=alert on error container', () => {
-    render(
+    renderWithFluent(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>

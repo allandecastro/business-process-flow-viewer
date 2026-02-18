@@ -28,5 +28,12 @@ npm-debug.log*
 coverage/
 *.lcov
 
+# Environment
+.env
+
+# Solution build outputs
+Solution/bin/
+Solution/obj/
+
 #Claude
 .claude/

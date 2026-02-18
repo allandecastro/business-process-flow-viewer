@@ -104,7 +104,11 @@ export function sanitizeUrl(url: string): string {
  * @returns Escaped value safe for OData queries
  */
 export function escapeODataValue(value: string): string {
-  if (!value || typeof value !== 'string') return '';
+  if (typeof value !== 'string') {
+    console.warn('[BPFViewer] escapeODataValue called with non-string input:', typeof value);
+    return '';
+  }
+  if (!value) return '';
 
   return value
     .replace(/'/g, "''") // Escape single quotes

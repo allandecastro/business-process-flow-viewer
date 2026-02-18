@@ -1,0 +1,121 @@
+name: CD - Build & Release Solution
+
+on:
+  # Trigger when a version tag is pushed: git tag v2.1.0 && git push --tags
+  push:
+    tags:
+      - 'v*'
+
+  # Manual trigger for ad-hoc builds (no release created)
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    name: Build Solution & Create Release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.x'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Extract and sync version ──
+      - name: Extract version from tag
+        id: version
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            # Strip the leading 'v' from the tag: v2.1.0 → 2.1.0
+            $version = "${{ github.ref_name }}" -replace '^v', ''
+          } else {
+            # Manual dispatch: read version from package.json
+            $version = (Get-Content package.json | ConvertFrom-Json).version
+          }
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Tag version: $version"
+
+      - name: Sync version across project files
+        if: github.ref_type == 'tag'
+        run: |
+          node scripts/bump-version.js ${{ steps.version.outputs.VERSION }}
+
+      - name: Verify versions are in sync
+        run: |
+          $expected = "${{ steps.version.outputs.VERSION }}"
+
+          $pkgVersion = (Get-Content package.json | ConvertFrom-Json).version
+          $manifestContent = Get-Content ControlManifest.Input.xml -Raw
+          $manifestMatch = [regex]::Match($manifestContent, '<control[\s\S]*?version="([^"]+)"')
+          $manifestVersion = $manifestMatch.Groups[1].Value
+          $solutionContent = Get-Content Solution/src/Other/Solution.xml -Raw
+          $solutionMatch = [regex]::Match($solutionContent, '<Version>([^<]+)</Version>')
+          $solutionVersion = $solutionMatch.Groups[1].Value
+
+          echo "Expected:             $expected"
+          echo "package.json:         $pkgVersion"
+          echo "ControlManifest.xml:  $manifestVersion"
+          echo "Solution.xml:         $solutionVersion"
+
+          if ($pkgVersion -ne $expected -or $manifestVersion -ne $expected -or $solutionVersion -ne $expected) {
+            echo "::error::Version mismatch detected! All files must match the tag version."
+            exit 1
+          }
+          echo "All versions in sync."
+
+      # ── Test & Build ──
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Build PCF control
+        run: npm run build
+
+      - name: Restore Solution NuGet packages
+        run: dotnet restore Solution/Solution.cdsproj
+
+      - name: Build managed solution
+        run: dotnet build Solution/Solution.cdsproj -c Release --no-restore
+
+      # ── Upload artifacts (always) ──
+      - name: Upload managed solution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BusinessProcessFlowViewer-v${{ steps.version.outputs.VERSION }}-managed
+          path: Solution/bin/Release/*_managed.zip
+          retention-days: 90
+
+      - name: Upload unmanaged solution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BusinessProcessFlowViewer-v${{ steps.version.outputs.VERSION }}-unmanaged
+          path: |
+            Solution/bin/Release/*.zip
+            !Solution/bin/Release/*_managed.zip
+          retention-days: 90
+
+      # ── Create GitHub Release with managed solution attached ──
+      - name: Create GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $tag = "v$version"
+          $zips = Get-ChildItem -Path Solution/bin/Release/*.zip
+          $zipPaths = $zips | ForEach-Object { $_.FullName }
+
+          gh release create $tag $zipPaths `
+            --title "v$version" `
+            --generate-notes

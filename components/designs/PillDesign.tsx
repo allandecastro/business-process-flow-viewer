@@ -11,6 +11,7 @@ import * as React from 'react';
 import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
+import { TRANSITION_DURATION, PULSE_DURATION } from './designConstants';
 
 const usePillStyles = makeStyles({
   container: {
@@ -31,7 +32,7 @@ const usePillStyles = makeStyles({
     fontWeight: 600,
     textAlign: 'center',
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
   },
   pillMobile: {
     flex: 'none',
@@ -49,7 +50,7 @@ const usePillStyles = makeStyles({
       '0%, 100%': { opacity: 1 },
       '50%': { opacity: 0.7 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });

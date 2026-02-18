@@ -3,7 +3,7 @@
   <control
     namespace="AllanDeCastro"
     constructor="BusinessProcessFlowViewer"
-    version="2.0.0"
+    version="0.1.0"
     display-name-key="BusinessProcessFlowViewer"
     description-key="BusinessProcessFlowViewer_Desc"
     control-type="virtual"
@@ -139,7 +139,9 @@
       <value name="no" display-name-key="No">no</value>
     </property>
     
-    <!-- Custom Colors (used when usePlatformTheme = no) -->
+    <!-- Custom Colors (used when usePlatformTheme = no)
+         NOTE: Runtime defaults live in utils/themeUtils.ts (DEFAULT_COLORS_LIGHT).
+         The default-value attributes below are for the Dataverse form editor UI only. -->
     <property name="completedColor" display-name-key="Completed_Color" description-key="Completed_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#107C10" />
     <property name="completedTextColor" display-name-key="Completed_Text_Color" description-key="Completed_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
     <property name="activeColor" display-name-key="Active_Color" description-key="Active_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#0078D4" />

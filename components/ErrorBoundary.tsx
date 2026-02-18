@@ -6,6 +6,52 @@
  */
 
 import * as React from 'react';
+import { makeStyles, tokens } from '@fluentui/react-components';
+
+const useErrorFallbackStyles = makeStyles({
+  container: {
+    padding: '12px',
+    backgroundColor: tokens.colorStatusDangerBackground1,
+    border: `1px solid ${tokens.colorStatusDangerBorder1}`,
+    borderRadius: '4px',
+    color: tokens.colorStatusDangerForeground1,
+    fontSize: '12px',
+  },
+  message: {
+    marginTop: '4px',
+    fontSize: '11px',
+  },
+  retryButton: {
+    marginTop: '8px',
+    padding: '4px 12px',
+    fontSize: '11px',
+    backgroundColor: tokens.colorStatusDangerBackground3,
+    color: tokens.colorNeutralForegroundOnBrand,
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+});
+
+const ErrorFallbackUI: React.FC<{ error: Error | null; onRetry: () => void }> = ({ error, onRetry }) => {
+  const styles = useErrorFallbackStyles();
+
+  return (
+    <div className={styles.container} role="alert">
+      <strong>Error displaying Business Process Flow</strong>
+      <div className={styles.message}>
+        {error?.message || 'An unexpected error occurred'}
+      </div>
+      <button
+        onClick={onRetry}
+        className={styles.retryButton}
+        aria-label="Retry rendering"
+      >
+        Retry
+      </button>
+    </div>
+  );
+};
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -37,45 +83,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render(): React.ReactNode {
     if (this.state.hasError) {
-      // Custom fallback or default error message
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      return (
-        <div
-          style={{
-            padding: '12px',
-            backgroundColor: '#FEF0F0',
-            border: '1px solid #D13438',
-            borderRadius: '4px',
-            color: '#A4262C',
-            fontSize: '12px',
-          }}
-          role="alert"
-        >
-          <strong>⚠️ Error displaying Business Process Flow</strong>
-          <div style={{ marginTop: '4px', fontSize: '11px' }}>
-            {this.state.error?.message || 'An unexpected error occurred'}
-          </div>
-          <button
-            onClick={this.handleRetry}
-            style={{
-              marginTop: '8px',
-              padding: '4px 12px',
-              fontSize: '11px',
-              backgroundColor: '#D13438',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-            aria-label="Retry rendering"
-          >
-            Retry
-          </button>
-        </div>
-      );
+      return <ErrorFallbackUI error={this.state.error} onRetry={this.handleRetry} />;
     }
 
     return this.props.children;

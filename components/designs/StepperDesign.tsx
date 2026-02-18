@@ -13,6 +13,7 @@ import * as React from 'react';
 import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
+import { TRANSITION_DURATION, PULSE_DURATION, CONNECTOR } from './designConstants';
 
 const useStepperStyles = makeStyles({
   container: {
@@ -38,7 +39,7 @@ const useStepperStyles = makeStyles({
     fontSize: '13px',
     fontWeight: 700,
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
   },
   stepMobile: {
     width: '22px',
@@ -57,18 +58,18 @@ const useStepperStyles = makeStyles({
   },
   connector: {
     flex: 1,
-    height: '2px',
+    height: CONNECTOR.height,
     marginTop: '14px',
     marginRight: '4px',
     marginLeft: '4px',
-    minWidth: '8px',
+    minWidth: CONNECTOR.minWidth,
   },
   pulse: {
     animationName: {
       '0%, 100%': { opacity: 1 },
       '50%': { opacity: 0.7 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });

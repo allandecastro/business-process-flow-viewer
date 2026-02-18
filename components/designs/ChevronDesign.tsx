@@ -14,6 +14,7 @@ import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
 import { getStageLabel } from '../../utils/themeUtils';
+import { TRANSITION_DURATION, PULSE_DURATION } from './designConstants';
 
 const useChevronStyles = makeStyles({
   container: {
@@ -34,7 +35,7 @@ const useChevronStyles = makeStyles({
     fontSize: '12px',
     fontWeight: 600,
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
     minWidth: 0,
   },
   stageMobile: {
@@ -52,7 +53,7 @@ const useChevronStyles = makeStyles({
       '0%, 100%': { opacity: 1 },
       '50%': { opacity: 0.7 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });

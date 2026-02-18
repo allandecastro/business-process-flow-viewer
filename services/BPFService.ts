@@ -22,6 +22,9 @@ import {
 } from '../types';
 import { BPFError, ErrorCodes } from '../utils/errorMessages';
 import { isValidEntityName, isValidGuid, escapeODataValue } from '../utils/sanitize';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('[BPFService]');
 
 // Request timeout (30 seconds)
 const REQUEST_TIMEOUT_MS = 30 * 1000;
@@ -71,13 +74,11 @@ export class BPFService {
    * Instead of N calls for N records, we make ceil(N/BATCH_SIZE) calls
    *
    * @param recordIds - Array of record IDs to fetch BPF data for
-   * @param _entityName - Entity name (currently unused, for future use)
    * @param config - BPF configuration
    * @param signal - Optional AbortSignal for request cancellation
    */
   public async getBPFDataForRecords(
     recordIds: string[],
-    _entityName: string,
     config: IBPFConfiguration,
     signal?: AbortSignal
   ): Promise<Map<string, IBPFInstance | null>> {
@@ -109,7 +110,7 @@ export class BPFService {
           }
         }
       } catch (error) {
-        console.warn(`[BPFService] Error fetching from ${bpfDef.bpfEntitySchemaName}:`, error);
+        log.warn(`Error fetching from ${bpfDef.bpfEntitySchemaName}:`, error);
       }
     }
 
@@ -165,7 +166,7 @@ export class BPFService {
       // Validate all record IDs in batch
       const validRecordIds = batch.filter(id => {
         if (!isValidGuid(id)) {
-          console.warn(`[BPFService] Skipping invalid GUID: ${id}`);
+          log.warn(`Skipping invalid GUID: ${id}`);
           return false;
         }
         return true;
@@ -187,8 +188,10 @@ export class BPFService {
         const response = await this.fetchWithTimeout(
           this.webApi.retrieveMultipleRecords(
             bpfEntitySchemaName,
-            `?$filter=${filterConditions}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupFieldSchemaName}&$orderby=createdon desc`
-          )
+            `?$filter=${filterConditions}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupFieldSchemaName}&$orderby=createdon desc&$top=5000`
+          ),
+          REQUEST_TIMEOUT_MS,
+          signal
         );
 
         // Group by record ID (take first/latest for each)
@@ -208,7 +211,7 @@ export class BPFService {
         }
 
       } catch (error) {
-        console.warn(`[BPFService] Batch fetch error:`, error);
+        log.warn(`Batch fetch error:`, error);
         // Don't throw - allow partial results
       }
     }
@@ -279,8 +282,10 @@ export class BPFService {
       const response = await this.fetchWithTimeout(
         this.webApi.retrieveMultipleRecords(
           'processstage',
-          `?$filter=_processid_value eq ${processId}&$select=processstageid,stagename,stagecategory&$orderby=stagecategory asc`
-        )
+          `?$filter=_processid_value eq ${processId}&$select=processstageid,stagename,stagecategory&$orderby=stagecategory asc&$top=100`
+        ),
+        REQUEST_TIMEOUT_MS,
+        signal
       );
 
       // Fetch category labels from metadata (cached)
@@ -308,7 +313,7 @@ export class BPFService {
       return stages;
 
     } catch (error) {
-      console.error(`[BPFService] Failed to get stages for ${bpfEntitySchemaName}:`, error);
+      log.error(`Failed to get stages for ${bpfEntitySchemaName}:`, error);
       throw new BPFError(
         `Failed to load process flow stages for ${bpfEntitySchemaName}`,
         ErrorCodes.STAGE_NOT_FOUND,
@@ -347,7 +352,9 @@ export class BPFService {
         this.webApi.retrieveMultipleRecords(
           'workflow',
           `?$filter=uniquename eq '${escapedName}' and category eq 4&$select=workflowid,name&$top=1`
-        )
+        ),
+        REQUEST_TIMEOUT_MS,
+        signal
       );
 
       if (response.entities && response.entities.length > 0) {
@@ -361,7 +368,9 @@ export class BPFService {
         this.webApi.retrieveMultipleRecords(
           'workflow',
           `?$filter=contains(uniquename,'${escapedName}') and category eq 4&$select=workflowid,name&$top=1`
-        )
+        ),
+        REQUEST_TIMEOUT_MS,
+        signal
       );
 
       if (altResponse.entities && altResponse.entities.length > 0) {
@@ -373,7 +382,7 @@ export class BPFService {
       return null;
 
     } catch (error) {
-      console.error(`[BPFService] Failed to get process ID for ${bpfEntitySchemaName}:`, error);
+      log.error(`Failed to get process ID for ${bpfEntitySchemaName}:`, error);
       throw new BPFError(
         `Failed to fetch workflow definition for ${bpfEntitySchemaName}`,
         ErrorCodes.FETCH_FAILED,
@@ -410,7 +419,9 @@ export class BPFService {
           'EntityDefinitions(LogicalName=\'processstage\')/Attributes(LogicalName=\'stagecategory\')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata',
           '',
           '?$select=LogicalName&$expand=OptionSet'
-        )
+        ),
+        REQUEST_TIMEOUT_MS,
+        signal
       ) as AttributeMetadataResponse;
 
       const categoryMap = new Map<number, string>();
@@ -432,7 +443,7 @@ export class BPFService {
       return categoryMap;
 
     } catch (error) {
-      console.warn('[BPFService] Failed to fetch category labels from metadata, using stage names as fallback:', error);
+      log.warn('Failed to fetch category labels from metadata, using stage names as fallback:', error);
 
       // Return empty map - fallback to stage name will be used
       if (!this.categoryLabelsCache) {
@@ -486,22 +497,34 @@ export class BPFService {
           return instance;
         }
       } catch (error) {
-        console.warn(`[BPFService] Error fetching single record:`, error);
+        log.warn(`Error fetching single record:`, error);
       }
     }
     return null;
   }
 
   /**
-   * Wrap a promise with a timeout to prevent indefinite hangs
+   * Wrap a promise with a timeout and optional abort signal to prevent indefinite hangs.
+   * When the timeout fires or the signal is aborted, the race rejects immediately
+   * so callers don't have to wait for the underlying (non-cancellable) WebAPI call.
    */
-  private fetchWithTimeout<T>(promise: Promise<T>, timeoutMs: number = REQUEST_TIMEOUT_MS): Promise<T> {
+  private fetchWithTimeout<T>(promise: Promise<T>, timeoutMs: number = REQUEST_TIMEOUT_MS, signal?: AbortSignal): Promise<T> {
     let timeoutId: ReturnType<typeof setTimeout>;
     const timeoutPromise = new Promise<T>((_resolve, reject) => {
       timeoutId = setTimeout(
         () => reject(new BPFError('Request timed out', ErrorCodes.TIMEOUT)),
         timeoutMs
       );
+
+      if (signal) {
+        if (signal.aborted) {
+          reject(new Error('Request cancelled'));
+          return;
+        }
+        signal.addEventListener('abort', () => {
+          reject(new Error('Request cancelled'));
+        }, { once: true });
+      }
     });
 
     return Promise.race([promise, timeoutPromise]).finally(() => {

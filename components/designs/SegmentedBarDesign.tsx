@@ -11,6 +11,7 @@ import * as React from 'react';
 import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
+import { TRANSITION_DURATION, PULSE_DURATION } from './designConstants';
 
 const useSegmentedStyles = makeStyles({
   container: {
@@ -31,7 +32,7 @@ const useSegmentedStyles = makeStyles({
     fontSize: '11px',
     fontWeight: 600,
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
     borderRight: '2px solid rgba(255,255,255,0.3)',
   },
   segmentLast: {
@@ -52,7 +53,7 @@ const useSegmentedStyles = makeStyles({
       '0%, 100%': { opacity: 1 },
       '50%': { opacity: 0.7 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });

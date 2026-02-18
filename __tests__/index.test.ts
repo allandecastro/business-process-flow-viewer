@@ -81,7 +81,7 @@ function createControlContext(overrides?: Partial<Record<string, unknown>>): Com
       deleteRecord: jest.fn(),
     },
     utils: {
-      getEntityMetadata: jest.fn(),
+      getEntityMetadata: jest.fn().mockRejectedValue(new Error('metadata not available')),
       hasEntityPrivilege: jest.fn().mockReturnValue(true),
       lookupObjects: jest.fn(),
     },
@@ -448,6 +448,9 @@ describe('BusinessProcessFlowViewer', () => {
 
       control.updateView(ctx1);
 
+      // Wait for async getEntityDisplayName to resolve before second updateView
+      await new Promise(resolve => setTimeout(resolve, 20));
+
       // Second dataset with TWO records so datasetVersion differs ("2_false" vs "1_false")
       const ctx2 = {
         ...context,
@@ -467,6 +470,9 @@ describe('BusinessProcessFlowViewer', () => {
       } as unknown as ComponentFramework.Context<IInputs>;
 
       control.updateView(ctx2);
+
+      // Wait for async getEntityDisplayName in second call
+      await new Promise(resolve => setTimeout(resolve, 20));
 
       // Resolve the first request (should be discarded as stale since generation moved on)
       resolveFirst(new Map());
@@ -521,6 +527,9 @@ describe('BusinessProcessFlowViewer', () => {
 
       control.updateView(ctx1);
 
+      // Wait for async getEntityDisplayName to resolve before second updateView
+      await new Promise(resolve => setTimeout(resolve, 20));
+
       // Trigger second processDataset with different version
       const ctx2 = {
         ...context,
@@ -540,6 +549,9 @@ describe('BusinessProcessFlowViewer', () => {
       } as unknown as ComponentFramework.Context<IInputs>;
 
       control.updateView(ctx2);
+
+      // Wait for async getEntityDisplayName in second call
+      await new Promise(resolve => setTimeout(resolve, 20));
 
       // Reject the first request (should be discarded as stale error)
       rejectFirst(new Error('Network error'));
@@ -1037,9 +1049,16 @@ describe('BusinessProcessFlowViewer', () => {
       } as unknown as ComponentFramework.Context<IInputs>;
     }
 
-    it('maps well-known entity "incident" to "Case"', async () => {
-      control.init(context, notifyOutputChanged);
+    it('uses Dataverse metadata for entity display name when available', async () => {
+      const metadataContext = { ...context };
+      (metadataContext.utils as { getEntityMetadata: jest.Mock }).getEntityMetadata =
+        jest.fn().mockResolvedValue({ DisplayName: 'Case' });
+
+      control.init(metadataContext, notifyOutputChanged);
       const newContext = createContextWithEntity('incident');
+      // Copy the metadata mock to the new context
+      (newContext.utils as { getEntityMetadata: jest.Mock }).getEntityMetadata =
+        jest.fn().mockResolvedValue({ DisplayName: 'Case' });
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
@@ -1048,14 +1067,14 @@ describe('BusinessProcessFlowViewer', () => {
       }
     });
 
-    it('maps well-known entity "salesorder" to "Order"', async () => {
+    it('falls back to camelCase splitter when metadata is unavailable', async () => {
       control.init(context, notifyOutputChanged);
-      const newContext = createContextWithEntity('salesorder');
+      const newContext = createContextWithEntity('incident');
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
       if (element.props.records.length > 0) {
-        expect(element.props.records[0].entityDisplayName).toBe('Order');
+        expect(element.props.records[0].entityDisplayName).toBe('Incident');
       }
     });
 

@@ -289,4 +289,12 @@ describe('FractionDesign', () => {
     renderWithFluent(<FractionDesign {...defaultProps} stages={allDone} />);
     expect(screen.getByText('/3')).toBeTruthy();
   });
+
+  it('renders fallback for empty stages without crashing', () => {
+    const { container } = renderWithFluent(
+      <FractionDesign {...defaultProps} stages={[]} />
+    );
+    expect(container.querySelector('[role="status"]')).toBeTruthy();
+    expect(screen.getByText('0/0')).toBeTruthy();
+  });
 });

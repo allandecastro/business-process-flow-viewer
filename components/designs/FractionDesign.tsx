@@ -13,6 +13,7 @@ import { makeStyles } from '@fluentui/react-components';
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
 import { getStageLabel } from '../../utils/themeUtils';
+import { PROGRESS_TRANSITION_DURATION } from './designConstants';
 
 const useFractionStyles = makeStyles({
   container: {
@@ -45,14 +46,13 @@ const useFractionStyles = makeStyles({
   },
   progressBar: {
     height: '8px',
-    backgroundColor: '#E1E1E1',
     borderRadius: '4px',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     transitionProperty: 'width',
-    transitionDuration: '0.5s',
+    transitionDuration: PROGRESS_TRANSITION_DURATION,
     transitionTimingFunction: 'ease-in-out',
   },
 });
@@ -64,6 +64,16 @@ const FractionDesignComponent: React.FC<IBPFDesignProps> = ({
 }) => {
   const styles = useFractionStyles();
   const { a11yMetadata } = useBPFDesignHelpers(stages, displayMode, colors, false);
+
+  if (stages.length === 0) {
+    return (
+      <div className={styles.container} role="status" aria-label="No stages available">
+        <div className={styles.fractionText} style={{ color: colors.inactiveText }}>
+          0/0
+        </div>
+      </div>
+    );
+  }
 
   const currentStage = a11yMetadata.activeStage || stages[stages.length - 1];
   const currentStepNumber = a11yMetadata.activeStageIndex + 1;
@@ -94,7 +104,7 @@ const FractionDesignComponent: React.FC<IBPFDesignProps> = ({
         >
           {label}
         </div>
-        <div className={styles.progressBar}>
+        <div className={styles.progressBar} style={{ backgroundColor: colors.track }}>
           <div
             className={styles.progressFill}
             style={{

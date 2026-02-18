@@ -1,6 +1,6 @@
 {
   "name": "business-process-flow-viewer",
-  "version": "2.0.0",
+  "version": "0.1.0",
   "description": "A modern PCF control that displays Business Process Flow stages in grid and subgrid views",
   "author": "Allan De Castro",
   "license": "MIT",
@@ -29,6 +29,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "solution:build": "dotnet build Solution/Solution.cdsproj -c Release",
+    "solution:build:debug": "dotnet build Solution/Solution.cdsproj -c Debug",
+    "solution:restore": "dotnet restore Solution/Solution.cdsproj",
+    "version:bump": "node scripts/bump-version.js",
     "prepare": "husky install"
   },
   "dependencies": {

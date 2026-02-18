@@ -14,6 +14,7 @@ import { useMemo } from 'react';
 import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
+import { TRANSITION_DURATION, PULSE_DURATION, PROGRESS_TRANSITION_DURATION } from './designConstants';
 
 const useGradientStyles = makeStyles({
   container: {
@@ -25,7 +26,6 @@ const useGradientStyles = makeStyles({
   trackContainer: {
     position: 'relative',
     height: '6px',
-    backgroundColor: '#E1E1E1',
     borderRadius: '3px',
   },
   progressBar: {
@@ -35,7 +35,7 @@ const useGradientStyles = makeStyles({
     height: '100%',
     borderRadius: '3px',
     transitionProperty: 'width',
-    transitionDuration: '0.5s',
+    transitionDuration: PROGRESS_TRANSITION_DURATION,
     transitionTimingFunction: 'ease-in-out',
   },
   markersContainer: {
@@ -63,7 +63,7 @@ const useGradientStyles = makeStyles({
     fontWeight: 700,
     zIndex: 2,
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
   },
   markerMobile: {
     width: '16px',
@@ -84,7 +84,7 @@ const useGradientStyles = makeStyles({
       '0%, 100%': { opacity: 1 },
       '50%': { opacity: 0.7 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });
@@ -110,7 +110,7 @@ const GradientDesignComponent: React.FC<IBPFDesignProps> = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.trackContainer}>
+      <div className={styles.trackContainer} style={{ backgroundColor: colors.track }}>
         <div
           className={styles.progressBar}
           style={{

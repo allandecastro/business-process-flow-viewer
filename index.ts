@@ -11,9 +11,11 @@ import * as React from 'react';
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 import { BPFViewer } from './components/BPFViewer';
 import { BPFService } from './services/BPFService';
+import type { Theme } from '@fluentui/react-components';
 import {
   IBPFConfiguration,
   IControlSettings,
+  IDatasetRecord,
   IRecordBPFData,
   IStageColors,
   DesignStyle,
@@ -27,6 +29,7 @@ import {
 import { getErrorMessage, BPFError, ErrorCodes } from './utils/errorMessages';
 import { validateBPFConfiguration } from './utils/configValidation';
 import { isValidEntityName, isValidGuid } from './utils/sanitize';
+import { logger } from './utils/logger';
 
 export class BusinessProcessFlowViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
   private context: ComponentFramework.Context<IInputs>;
@@ -41,6 +44,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
   // Cache to prevent redundant fetches
   private fetchedRecordIds: Set<string> = new Set();
   private lastDatasetVersion: string = '';
+  private entityDisplayNameCache: Map<string, string> = new Map();
 
   // Request cancellation support
   private abortController: AbortController | null = null;
@@ -90,7 +94,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
         this.bpfConfig = validationResult.config!;
       }
     } catch (e) {
-      console.error('[BPFViewer] Failed to parse BPF configuration:', e);
+      logger.error('Failed to parse BPF configuration:', e);
       const bpfError = e instanceof BPFError ? e : new BPFError(
         'Invalid BPF configuration JSON',
         ErrorCodes.INVALID_CONFIG,
@@ -156,8 +160,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       this.processDataset(dataset);
     }
 
-    // Get platform theme if available
-    const platformTheme = context.fluentDesignLanguage?.tokenTheme;
+    // Get platform theme if available (PCF provides Fluent v9 Theme via fluentDesignLanguage)
+    const platformTheme = context.fluentDesignLanguage?.tokenTheme as Theme | undefined;
 
     return React.createElement(BPFViewer, {
       records: this.records,
@@ -165,8 +169,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       colors: this.getColors(),
       isLoading: this.isLoading || dataset.loading,
       error: this.error,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      platformTheme: platformTheme as any,
+      platformTheme,
       onNavigate: this.handleNavigate.bind(this),
       onRefresh: this.handleRefresh.bind(this),
     });
@@ -196,11 +199,13 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       return;
     }
 
-    // Get entity name from first record
-    const firstRecord = dataset.records[recordIds[0]];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const entityName = (firstRecord as any).getNamedReference?.()?.entityType ||
+    // Get entity name from first record (cast to IDatasetRecord for getNamedReference support)
+    const firstRecord = dataset.records[recordIds[0]] as unknown as IDatasetRecord;
+    const entityName = firstRecord.getNamedReference?.()?.entityType ||
                        this.getEntityNameFromConfig();
+
+    // Resolve display name once (async with Dataverse metadata, cached)
+    const entityDisplayName = await this.getEntityDisplayName(entityName);
 
     // Build initial records with loading state
     const newRecordIds: string[] = [];
@@ -226,7 +231,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
           recordId,
           recordName,
           entityName,
-          entityDisplayName: this.getEntityDisplayName(entityName),
+          entityDisplayName,
           bpfInstance: null,
           isLoading: true,
           error: null,
@@ -242,7 +247,6 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       try {
         const bpfData = await this.bpfService.getBPFDataForRecords(
           newRecordIds,
-          entityName,
           this.bpfConfig,
           this.abortController.signal
         );
@@ -271,7 +275,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
           return;
         }
 
-        console.error('[BPFViewer] Failed to fetch BPF data:', e);
+        logger.error('Failed to fetch BPF data:', e);
 
         // Get user-friendly error message
         const errorMessage = getErrorMessage(e);
@@ -308,27 +312,40 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
   }
 
   /**
-   * Get entity display name (would normally use Utility.getEntityMetadata)
+   * Get entity display name from Dataverse metadata (async with cache).
+   * Falls back to a camelCase splitter if metadata is unavailable.
    */
-  private getEntityDisplayName(entityName: string): string {
-    // Well-known Dataverse entities with non-obvious display names
-    const knownNames: Record<string, string> = {
-      incident: 'Case',
-      salesorder: 'Order',
-    };
-
-    const lower = entityName.toLowerCase();
-    if (knownNames[lower]) {
-      return knownNames[lower];
+  private async getEntityDisplayName(entityName: string): Promise<string> {
+    // Check cache first
+    const cached = this.entityDisplayNameCache.get(entityName);
+    if (cached) {
+      return cached;
     }
 
-    // Smart fallback: split camelCase/underscores and capitalize each word
-    return entityName
+    // Try Dataverse metadata API
+    try {
+      if (this.context.utils?.getEntityMetadata) {
+        const metadata = await this.context.utils.getEntityMetadata(entityName);
+        const displayName = metadata?.DisplayName;
+        if (displayName) {
+          this.entityDisplayNameCache.set(entityName, displayName);
+          return displayName;
+        }
+      }
+    } catch {
+      // Metadata unavailable (e.g., offline, permissions) — fall through to fallback
+    }
+
+    // Fallback: split camelCase/underscores and capitalize each word
+    const fallback = entityName
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       .split(/[-_ ]/)
       .filter(Boolean)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+
+    this.entityDisplayNameCache.set(entityName, fallback);
+    return fallback;
   }
 
   /**
@@ -340,7 +357,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     }
 
     if (!isValidEntityName(entityName) || !isValidGuid(recordId)) {
-      console.warn('[BPFViewer] Invalid entity name or record ID format');
+      logger.warn('Invalid entity name or record ID format');
       return;
     }
 

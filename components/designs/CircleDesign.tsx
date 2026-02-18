@@ -13,6 +13,7 @@ import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import { StageIcon } from "./shared/StageIcon";
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
+import { TRANSITION_DURATION, PULSE_DURATION, CONNECTOR } from './designConstants';
 
 const useCircleStyles = makeStyles({
   container: {
@@ -42,7 +43,7 @@ const useCircleStyles = makeStyles({
     fontSize: '12px',
     fontWeight: 700,
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
   },
   circleMobile: {
     width: '24px',
@@ -63,8 +64,8 @@ const useCircleStyles = makeStyles({
   },
   connector: {
     flex: 1,
-    height: '2px',
-    minWidth: '8px',
+    height: CONNECTOR.height,
+    minWidth: CONNECTOR.minWidth,
   },
   connectorDesktop: {
     marginTop: '-20px',
@@ -74,7 +75,7 @@ const useCircleStyles = makeStyles({
       '0%, 100%': { opacity: 1 },
       '50%': { opacity: 0.7 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });

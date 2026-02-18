@@ -50,7 +50,7 @@ describe('BPFService', () => {
 
   describe('getBPFDataForRecords', () => {
     it('should return empty map for empty record IDs', async () => {
-      const result = await service.getBPFDataForRecords([], 'opportunity', mockConfig);
+      const result = await service.getBPFDataForRecords([], mockConfig);
 
       expect(result.size).toBe(0);
       expect(mockWebAPI.retrieveMultipleRecords).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
 
       expect(result.size).toBe(1);
       expect(result.has(recordId)).toBe(true);
@@ -149,7 +149,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      await service.getBPFDataForRecords(recordIds, 'opportunity', mockConfig);
+      await service.getBPFDataForRecords(recordIds, mockConfig);
 
       // Should batch into groups (25 records with default batch size of 10 = 3 batches)
       const bpfCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
@@ -166,7 +166,7 @@ describe('BPFService', () => {
 
       mockWebAPI.retrieveMultipleRecords.mockResolvedValue({ entities: [] });
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
 
       expect(result.size).toBe(1);
       expect(result.get(recordId)).toBeNull();
@@ -177,7 +177,7 @@ describe('BPFService', () => {
 
       mockWebAPI.retrieveMultipleRecords.mockRejectedValue(new Error('API Error'));
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
 
       // Should return result with null for records that failed
       expect(result.size).toBe(1);
@@ -230,13 +230,13 @@ describe('BPFService', () => {
       });
 
       // First call
-      await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
       const firstCallCount = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
         (call) => call[0] === 'processstage'
       ).length;
 
       // Second call - should use cache
-      await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
       const secondCallCount = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
         (call) => call[0] === 'processstage'
       ).length;
@@ -260,14 +260,14 @@ describe('BPFService', () => {
       });
 
       // Populate cache
-      await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
 
       // Clear cache
       service.clearCache();
 
       // Next call should fetch again
       mockWebAPI.retrieveMultipleRecords.mockClear();
-      await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
 
       // Should have made API calls again
       expect(mockWebAPI.retrieveMultipleRecords).toHaveBeenCalled();
@@ -316,7 +316,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       const bpfInstance = result.get(recordId);
 
       expect(bpfInstance?.stages[0].isCompleted).toBe(true);
@@ -360,7 +360,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       const bpfInstance = result.get(recordId);
 
       // Stages should be ordered correctly regardless of API return order
@@ -417,7 +417,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', multiConfig);
+      const result = await service.getBPFDataForRecords([recordId], multiConfig);
 
       expect(result.size).toBe(1);
       expect(result.has(recordId)).toBe(true);
@@ -435,7 +435,7 @@ describe('BPFService', () => {
 
       // With an already-aborted signal, the error throws from the loop
       await expect(
-        service.getBPFDataForRecords([recordId], 'opportunity', mockConfig, controller.signal)
+        service.getBPFDataForRecords([recordId], mockConfig, controller.signal)
       ).rejects.toThrow('Request cancelled');
     });
 
@@ -459,7 +459,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'opportunity', mockConfig, controller.signal);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig, controller.signal);
       expect(result.size).toBe(1);
     });
   });
@@ -474,7 +474,7 @@ describe('BPFService', () => {
       };
       const recordId = '00000000-0000-0000-0000-000000000001';
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', invalidConfig);
+      const result = await service.getBPFDataForRecords([recordId], invalidConfig);
       expect(result.get(recordId)).toBeNull();
     });
 
@@ -497,7 +497,7 @@ describe('BPFService', () => {
       });
 
       const result = await service.getBPFDataForRecords(
-        [validId, invalidId], 'entity', mockConfig
+        [validId, invalidId], mockConfig
       );
 
       // Both should be in results (invalid one as null)
@@ -520,7 +520,7 @@ describe('BPFService', () => {
       });
 
       const result = await service.getBPFDataForRecords(
-        ['invalid1', 'invalid2'], 'entity', mockConfig
+        ['invalid1', 'invalid2'], mockConfig
       );
 
       expect(result.get('invalid1')).toBeNull();
@@ -546,12 +546,12 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
       const firstWorkflowCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
         c => c[0] === 'workflow'
       ).length;
 
-      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
       const secondWorkflowCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
         c => c[0] === 'workflow'
       ).length;
@@ -584,7 +584,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       // Should have tried the alternative query
       expect(workflowCallCount).toBe(2);
     });
@@ -597,7 +597,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       expect(result.get(recordId)).toBeNull();
     });
 
@@ -615,7 +615,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig, controller.signal);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig, controller.signal);
       expect(result.size).toBe(1);
     });
   });
@@ -642,7 +642,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       // Should still return result (null for failed record)
       expect(result.size).toBe(1);
       expect(result.get(recordId)).toBeNull();
@@ -667,10 +667,10 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
       const firstRetrieveRecordCalls = (mockWebAPI.retrieveRecord as jest.Mock).mock.calls.length;
 
-      await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      await service.getBPFDataForRecords([recordId], mockConfig);
       const secondRetrieveRecordCalls = (mockWebAPI.retrieveRecord as jest.Mock).mock.calls.length;
 
       // Category labels should be cached
@@ -698,7 +698,7 @@ describe('BPFService', () => {
       });
 
       // Should not throw - falls back to stage names
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       expect(result.size).toBe(1);
     });
 
@@ -733,7 +733,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       const instance = result.get(recordId);
       // Should use the localized labels fallback
       expect(instance).toBeNull(); // No BPF instance match, but stages were fetched successfully
@@ -763,7 +763,7 @@ describe('BPFService', () => {
       });
 
       // Should handle the abort gracefully (category labels failure is non-fatal)
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig, controller.signal);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig, controller.signal);
       expect(result.size).toBe(1);
     });
   });
@@ -891,7 +891,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const result = await service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
       const instance = result.get(recordId);
       expect(instance).toBeDefined();
       expect(instance?.processId).toBe('');
@@ -904,7 +904,7 @@ describe('BPFService', () => {
     it('should return empty map for empty BPF config', async () => {
       const emptyConfig: IBPFConfiguration = { bpfs: [] };
       const result = await service.getBPFDataForRecords(
-        ['00000000-0000-0000-0000-000000000001'], 'entity', emptyConfig
+        ['00000000-0000-0000-0000-000000000001'], emptyConfig
       );
       expect(result.size).toBe(0);
     });
@@ -930,7 +930,7 @@ describe('BPFService', () => {
         return Promise.resolve({ entities: [] });
       });
 
-      const resultPromise = service.getBPFDataForRecords([recordId], 'entity', mockConfig);
+      const resultPromise = service.getBPFDataForRecords([recordId], mockConfig);
 
       // Advance timers past the 30s timeout
       jest.advanceTimersByTime(31000);
@@ -938,6 +938,43 @@ describe('BPFService', () => {
       const result = await resultPromise;
       // Error is caught per-BPF, record gets null
       expect(result.get(recordId)).toBeNull();
+    });
+  });
+
+  describe('fetchWithTimeout abort signal integration', () => {
+    it('should reject immediately when signal is aborted during a pending request', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      const controller = new AbortController();
+
+      // Workflow query hangs indefinitely
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'workflow') {
+          return new Promise(() => {/* never resolves */});
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const resultPromise = service.getBPFDataForRecords(
+        [recordId], mockConfig, controller.signal
+      );
+
+      // Abort while the workflow request is pending
+      controller.abort();
+
+      const result = await resultPromise;
+      // Error is caught per-BPF, record gets null
+      expect(result.get(recordId)).toBeNull();
+    });
+
+    it('should reject fetchWithTimeout if signal is already aborted', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+      const controller = new AbortController();
+      controller.abort(); // Abort before any call
+
+      // The pre-aborted signal throws before the try-catch in the for-loop
+      await expect(
+        service.getBPFDataForRecords([recordId], mockConfig, controller.signal)
+      ).rejects.toThrow('Request cancelled');
     });
   });
 });

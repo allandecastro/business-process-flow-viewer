@@ -13,6 +13,7 @@ import { makeStyles, mergeClasses } from '@fluentui/react-components';
 import { StageIcon } from "./shared/StageIcon";
 import type { IBPFDesignProps } from '../../types';
 import { useBPFDesignHelpers } from './hooks/useBPFDesignHelpers';
+import { TRANSITION_DURATION, PULSE_DURATION, PROGRESS_TRANSITION_DURATION } from './designConstants';
 
 const useLineStyles = makeStyles({
   container: {
@@ -24,7 +25,6 @@ const useLineStyles = makeStyles({
   trackContainer: {
     position: 'relative',
     height: '4px',
-    backgroundColor: '#E1E1E1',
     borderRadius: '2px',
   },
   progressLine: {
@@ -34,7 +34,7 @@ const useLineStyles = makeStyles({
     height: '100%',
     borderRadius: '2px',
     transitionProperty: 'width',
-    transitionDuration: '0.5s',
+    transitionDuration: PROGRESS_TRANSITION_DURATION,
     transitionTimingFunction: 'ease-in-out',
   },
   markersContainer: {
@@ -60,7 +60,7 @@ const useLineStyles = makeStyles({
     justifyContent: 'center',
     zIndex: 2,
     transitionProperty: 'all',
-    transitionDuration: '0.2s',
+    transitionDuration: TRANSITION_DURATION,
   },
   markerActive: {
     width: '28px',
@@ -96,7 +96,7 @@ const useLineStyles = makeStyles({
       '50%': { transform: 'scale(1.1)', opacity: 0.8 },
       '100%': { transform: 'scale(1)', opacity: 1 },
     },
-    animationDuration: '2s',
+    animationDuration: PULSE_DURATION,
     animationIterationCount: 'infinite',
   },
 });
@@ -121,7 +121,7 @@ const LineDesignComponent: React.FC<IBPFDesignProps> = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.trackContainer}>
+      <div className={styles.trackContainer} style={{ backgroundColor: colors.track }}>
         <div
           className={styles.progressLine}
           style={{ width: progressWidth, backgroundColor: colors.completed }}

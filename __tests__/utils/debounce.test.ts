@@ -1,8 +1,8 @@
 /**
- * Tests for debounce and throttle utilities
+ * Tests for debounce utility
  */
 
-import { debounce, throttle } from '../../utils/debounce';
+import { debounce } from '../../utils/debounce';
 
 describe('debounce', () => {
   beforeEach(() => {
@@ -73,53 +73,55 @@ describe('debounce', () => {
     jest.advanceTimersByTime(100);
     expect(fn).toHaveBeenCalledTimes(2);
   });
-});
 
-describe('throttle', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
+  describe('cancel', () => {
+    it('cancels a pending debounced call', () => {
+      const fn = jest.fn();
+      const debounced = debounce(fn, 100);
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
+      debounced();
+      debounced.cancel();
+      jest.advanceTimersByTime(100);
 
-  it('executes immediately on first call', () => {
-    const fn = jest.fn();
-    const throttled = throttle(fn, 100);
+      expect(fn).not.toHaveBeenCalled();
+    });
 
-    throttled();
-    expect(fn).toHaveBeenCalledTimes(1);
-  });
+    it('is safe to call cancel when no timer is pending', () => {
+      const fn = jest.fn();
+      const debounced = debounce(fn, 100);
 
-  it('ignores calls within the throttle period', () => {
-    const fn = jest.fn();
-    const throttled = throttle(fn, 100);
+      // Cancel with nothing pending — should not throw
+      debounced.cancel();
+      expect(fn).not.toHaveBeenCalled();
+    });
 
-    throttled();
-    throttled();
-    throttled();
+    it('is safe to call cancel after the timer has already fired', () => {
+      const fn = jest.fn();
+      const debounced = debounce(fn, 100);
 
-    expect(fn).toHaveBeenCalledTimes(1);
-  });
+      debounced();
+      jest.advanceTimersByTime(100);
+      expect(fn).toHaveBeenCalledTimes(1);
 
-  it('allows execution after throttle period', () => {
-    const fn = jest.fn();
-    const throttled = throttle(fn, 100);
+      // Cancel after fire — should not throw
+      debounced.cancel();
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
 
-    throttled();
-    expect(fn).toHaveBeenCalledTimes(1);
+    it('allows new calls after cancel', () => {
+      const fn = jest.fn();
+      const debounced = debounce(fn, 100);
 
-    jest.advanceTimersByTime(100);
-    throttled();
-    expect(fn).toHaveBeenCalledTimes(2);
-  });
+      debounced('first');
+      debounced.cancel();
+      jest.advanceTimersByTime(100);
+      expect(fn).not.toHaveBeenCalled();
 
-  it('passes arguments to the throttled function', () => {
-    const fn = jest.fn();
-    const throttled = throttle(fn, 100);
-
-    throttled('arg1', 'arg2');
-    expect(fn).toHaveBeenCalledWith('arg1', 'arg2');
+      // New call after cancel
+      debounced('second');
+      jest.advanceTimersByTime(100);
+      expect(fn).toHaveBeenCalledTimes(1);
+      expect(fn).toHaveBeenCalledWith('second');
+    });
   });
 });

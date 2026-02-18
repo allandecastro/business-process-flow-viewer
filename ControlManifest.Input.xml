@@ -7,7 +7,7 @@
     display-name-key="BusinessProcessFlowViewer"
     description-key="BusinessProcessFlowViewer_Desc"
     control-type="virtual"
-    preview-image="img/preview.svg"
+    preview-image="preview.svg"
   >
     <external-service-usage enabled="false" />
     

@@ -79,8 +79,9 @@ jobs:
       - name: Run tests
         run: npm run test:ci
 
-      - name: Build PCF control
-        run: npm run build
+      - name: Clean build output
+        run: |
+          if (Test-Path out) { Remove-Item -Recurse -Force out }
 
       - name: Restore Solution NuGet packages
         run: dotnet restore Solution/Solution.cdsproj

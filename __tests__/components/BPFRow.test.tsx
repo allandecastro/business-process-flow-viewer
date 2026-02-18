@@ -11,12 +11,12 @@ import {
 import { BPFRow } from '../../components/BPFRow';
 import type { IControlSettings } from '../../types';
 
-const mockSettings: IControlSettings = {
-  designStyle: 'chevron',
-  displayMode: 'stage',
-  recordNameSize: 'medium',
+const mockSettings = {
+  designStyle: 'chevron' as const,
+  displayMode: 'stage' as const,
+  recordNameSize: 'medium' as const,
   showEntityName: true,
-  enableNavigation: false,
+  enableNavigation: false as const,
   showPulseAnimation: true,
   usePlatformTheme: false,
 };

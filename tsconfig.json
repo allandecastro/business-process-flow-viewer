@@ -30,6 +30,8 @@
   ],
   "exclude": [
     "node_modules",
-    "out"
+    "out",
+    "__tests__",
+    "scripts"
   ]
 }

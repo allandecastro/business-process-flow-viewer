@@ -5,6 +5,45 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-19
+
+First stable release. Complete rewrite from vanilla JavaScript to a modern React + TypeScript Virtual PCF control with Fluent UI v9 theming.
+
+### Highlights
+
+- **8 design styles**: Chevron, Circles, Pills, Segmented, Stepper, Gradient, Line, Fraction
+- **Conditional BPF support**: Uses `RetrieveActivePath` to show only active-path stages for BPFs with branching logic
+- **Custom BPF support**: Works with both OOTB BPFs (e.g. `opportunitysalesprocess`) and custom BPF entities (e.g. `adc_custombpf`)
+- **Multi-BPF configuration**: A single subgrid can display records from multiple BPF definitions via JSON config
+- **Fluent UI v9 theming**: Inherits platform theme automatically, with optional custom color overrides
+- **Responsive layout**: Container-based detection with ResizeObserver for proper subgrid sizing
+- **371 automated tests** across 18 test suites with accessibility (axe-core) integration
+
+### Performance
+- Batched Dataverse API calls (N records in ceil(N/10) calls instead of N)
+- Parallelized API calls reducing cold-cache load from 5-6 sequential calls to ~3
+- 5-minute cache for stage definitions, workflow IDs, and active path results
+- Request cancellation with AbortController and 30-second timeout protection
+
+### Security
+- Input sanitization (entity names, GUIDs, hex colors, OData values)
+- BPF configuration validation with detailed error messages
+- Custom `BPFError` class with error codes
+
+### Accessibility
+- ARIA attributes on all design components
+- Keyboard navigation support
+- Screen reader friendly labels with progress metadata
+
+### CI/CD
+- GitHub Actions CI pipeline (lint + test on push/PR)
+- GitHub Actions CD pipeline (build + package managed/unmanaged solution on tag push)
+- Pre-commit hooks with Husky and lint-staged (ESLint + Jest)
+
+---
+
+### Pre-release development history (0.1.x)
+
 ## [0.1.17] - 2026-02-19
 
 ### Removed
@@ -169,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.0.0]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.17...v1.0.0
 [0.1.17]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.14...v0.1.15

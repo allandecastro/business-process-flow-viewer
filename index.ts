@@ -30,6 +30,7 @@ import { getErrorMessage, BPFError, ErrorCodes } from './utils/errorMessages';
 import { validateBPFConfiguration } from './utils/configValidation';
 import { isValidEntityName, isValidGuid } from './utils/sanitize';
 import { logger } from './utils/logger';
+import { createPerfTracker } from './utils/perfTracker';
 
 export class BusinessProcessFlowViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
   private context: ComponentFramework.Context<IInputs>;
@@ -199,6 +200,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       return;
     }
 
+    const perf = createPerfTracker(`processDataset (${recordIds.length} records)`);
+
     // Get entity name from first record (cast to IDatasetRecord for getNamedReference support)
     const firstRecord = dataset.records[recordIds[0]] as unknown as IDatasetRecord;
     const entityName = firstRecord.getNamedReference?.()?.entityType ||
@@ -217,15 +220,19 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
     // OPTIMIZED: Start BPF fetch and entity display name resolution in parallel
     // Both are independent async operations that hit Dataverse
+    perf.mark('getBPFDataForRecords');
     const bpfDataPromise = newRecordIds.length > 0
       ? this.bpfService.getBPFDataForRecords(
           newRecordIds,
           this.bpfConfig,
-          this.abortController.signal
+          this.abortController.signal,
+          perf
         )
       : Promise.resolve(new Map<string, import('./types').IBPFInstance | null>());
 
+    perf.mark('getEntityDisplayName', this.entityDisplayNameCache.has(entityName));
     const entityDisplayName = await this.getEntityDisplayName(entityName);
+    perf.measure('getEntityDisplayName');
 
     // Now build the initial records with display name
     const updatedRecords: IRecordBPFData[] = [];
@@ -260,6 +267,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     if (newRecordIds.length > 0) {
       try {
         const bpfData = await bpfDataPromise;
+        perf.measure('getBPFDataForRecords');
 
         // Discard stale results if a newer request has started
         if (currentGeneration !== this.requestGeneration) {
@@ -280,6 +288,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
         });
 
       } catch (e) {
+        perf.measure('getBPFDataForRecords');
+
         // Discard stale errors if a newer request has started
         if (currentGeneration !== this.requestGeneration) {
           return;
@@ -305,6 +315,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     }
 
     this.isLoading = false;
+    perf.summary();
   }
 
   /**

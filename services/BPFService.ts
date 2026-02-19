@@ -23,6 +23,7 @@ import {
 import { BPFError, ErrorCodes } from '../utils/errorMessages';
 import { isValidEntityName, isValidGuid, escapeODataValue } from '../utils/sanitize';
 import { createLogger } from '../utils/logger';
+import type { PerfTracker } from '../utils/perfTracker';
 
 const log = createLogger('[BPFService]');
 
@@ -80,7 +81,8 @@ export class BPFService {
   public async getBPFDataForRecords(
     recordIds: string[],
     config: IBPFConfiguration,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    perf?: PerfTracker
   ): Promise<Map<string, IBPFInstance | null>> {
     const results = new Map<string, IBPFInstance | null>();
 
@@ -97,11 +99,15 @@ export class BPFService {
 
       try {
         // Fetch BPF instances in batches
+        const label = `fetchBPF:${bpfDef.bpfEntitySchemaName}`;
+        perf?.mark(label);
         const batchResults = await this.fetchBPFInstancesBatched(
           recordIds,
           bpfDef,
-          signal
+          signal,
+          perf
         );
+        perf?.measure(label);
 
         // Merge results (first match wins)
         for (const [recordId, instance] of batchResults) {
@@ -130,7 +136,8 @@ export class BPFService {
   private async fetchBPFInstancesBatched(
     recordIds: string[],
     bpfDef: IBPFDefinition,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    perf?: PerfTracker
   ): Promise<Map<string, IBPFInstance | null>> {
     const results = new Map<string, IBPFInstance | null>();
     const { bpfEntitySchemaName, lookupFieldSchemaName } = bpfDef;
@@ -183,10 +190,12 @@ export class BPFService {
 
     // OPTIMIZED: Fetch stages and BPF instances in parallel
     // Stages are only needed for mapping, not for the instances query itself
+    perf?.mark('parallel:stages+instances');
     const [stages, ...batchResponses] = await Promise.all([
-      this.getProcessStages(bpfEntitySchemaName, signal),
+      this.getProcessStages(bpfEntitySchemaName, signal, perf),
       ...batchPromises,
     ]);
+    perf?.measure('parallel:stages+instances');
 
     if (stages.length === 0) {
       return results;
@@ -259,10 +268,12 @@ export class BPFService {
    * OPTIMIZED: Get process stages with caching
    * Stage definitions rarely change, so we cache them for 5 minutes
    */
-  private async getProcessStages(bpfEntitySchemaName: string, signal?: AbortSignal): Promise<IBPFStage[]> {
+  private async getProcessStages(bpfEntitySchemaName: string, signal?: AbortSignal, perf?: PerfTracker): Promise<IBPFStage[]> {
     // Check cache
     const cached = this.stageCache.get(bpfEntitySchemaName);
     if (cached && Date.now() - cached.timestamp < CACHE_TIMEOUT_MS) {
+      perf?.mark('getProcessStages', true);
+      perf?.measure('getProcessStages');
       return cached.stages;
     }
 
@@ -273,16 +284,19 @@ export class BPFService {
 
     try {
       // OPTIMIZED: Fetch processId and category labels in parallel (both are independent)
+      perf?.mark('parallel:processId+categoryLabels');
       const [processId, categoryLabels] = await Promise.all([
         this.getProcessId(bpfEntitySchemaName, signal),
         this.getStageCategoryLabels(signal),
       ]);
+      perf?.measure('parallel:processId+categoryLabels');
 
       if (!processId) {
         return [];
       }
 
       // Fetch stages (depends on processId)
+      perf?.mark('query:processstage');
       const response = await this.fetchWithTimeout(
         this.webApi.retrieveMultipleRecords(
           'processstage',
@@ -291,6 +305,7 @@ export class BPFService {
         REQUEST_TIMEOUT_MS,
         signal
       );
+      perf?.measure('query:processstage');
 
       const stages: IBPFStage[] = (response.entities as IProcessStageResponse[]).map(
         (stage, index) => ({

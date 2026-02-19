@@ -5,6 +5,31 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12] - 2026-02-19
+
+### Added
+- **Conditional BPF stage support**: Integrated the Dataverse `RetrieveActivePath` function to fetch only the stages in the active path for each BPF instance. BPFs with conditional branching now correctly show only the relevant branch stages instead of all stages. Falls back to fetching all stages if the function is unavailable.
+- **Active path caching**: Per-instance active path results are cached for 5 minutes to avoid redundant API calls.
+
+### Fixed
+- **CircleDesign connector centering**: Connector lines between circles are now precisely centered using calculated margins based on circle diameter, replacing the previous `-20px` margin hack.
+
+## [0.1.11] - 2026-02-19
+
+### Fixed
+- **Finished BPF stages**: All stages are now correctly marked as completed when a BPF instance has `statuscode = 2` (Finished).
+
+## [0.1.10] - 2026-02-19
+
+### Changed
+- **Title-case stage names**: Stage names are now displayed in title case for consistent formatting.
+- **Entity badge hidden by default**: The entity type badge next to record names is now hidden by default (`showEntityName` defaults to `no`).
+
+## [0.1.9] - 2026-02-19
+
+### Fixed
+- **Container sizing**: Now uses `allocatedWidth` and `allocatedHeight` from the PCF framework to properly fill the subgrid container, instead of relying on CSS-only sizing.
+
 ## [0.1.8] - 2026-02-19
 
 ### Added
@@ -131,6 +156,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.12]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.11...v0.1.12
+[0.1.11]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.10...v0.1.11
+[0.1.10]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.9...v0.1.10
+[0.1.9]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.5...v0.1.6

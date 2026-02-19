@@ -73,7 +73,7 @@ Multiple BPF definitions can be configured for entities with more than one busin
 | `designStyle` | Enum | `chevron` | Visual design style |
 | `displayMode` | Enum | `stage` | Show stage or category names |
 | `recordNameSize` | Enum | `medium` | Record name font size (small/medium/large) |
-| `showEntityName` | Enum | `yes` | Show entity type badge next to record name |
+| `showEntityName` | Enum | `no` | Show entity type badge next to record name |
 | `enableNavigation` | Enum | `yes` | Click row to open record in new tab |
 | `showPulseAnimation` | Enum | `yes` | Subtle animation on active stage |
 | `usePlatformTheme` | Enum | `yes` | Use Dataverse environment theme colors |
@@ -92,7 +92,8 @@ The control is optimized for large datasets:
 
 - **Batched API calls** - Fetches BPF data for up to 10 records per API call using `$filter` with OR conditions
 - **Parallel requests** - Stage definitions, category labels, workflow IDs, and BPF instances are fetched concurrently with `Promise.all`
-- **Caching** - Stage definitions, workflow IDs, and category labels are cached for 5 minutes
+- **Conditional BPF support** - Uses the Dataverse `RetrieveActivePath` function to fetch only the stages in the active path, correctly handling BPFs with conditional branching
+- **Caching** - Stage definitions, workflow IDs, category labels, and active path results are cached for 5 minutes
 - **Request cancellation** - Stale requests are cancelled via AbortController when the dataset changes
 - **Column selection** - Only needed columns are requested to minimize payload size
 
@@ -156,7 +157,7 @@ business-process-flow-viewer/
 │   ├── perfTracker.ts             # Performance instrumentation
 │   └── logger.ts                  # Centralized logging
 ├── types/                         # TypeScript type definitions
-├── __tests__/                     # 354 tests across 17 suites
+├── __tests__/                     # 360 tests across 17 suites
 ├── Solution/                      # Dataverse solution project
 └── .github/workflows/             # CI/CD pipelines
 ```

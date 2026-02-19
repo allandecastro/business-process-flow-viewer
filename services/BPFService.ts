@@ -239,12 +239,17 @@ export class BPFService {
     const traversedPath = (bpfRecord.traversedpath as string) || '';
     const traversedStageIds = traversedPath.split(',').filter(Boolean);
     const activeStageId = bpfRecord._activestageid_value as string || null;
+    const isFinished = (bpfRecord.statuscode as number) === 2;
 
     // Map stages with completion status
+    // When the BPF is finished (statuscode 2 = Inactive/Finished), all stages
+    // including the last one are marked as completed with no active stage
     const stages = stageDefinitions.map((stage, index) => {
-      const isActive = stage.stageId === activeStageId;
-      const isCompleted = traversedStageIds.includes(stage.stageId) && !isActive;
-      
+      const isActive = !isFinished && stage.stageId === activeStageId;
+      const isCompleted = isFinished
+        ? traversedStageIds.includes(stage.stageId) || stage.stageId === activeStageId
+        : traversedStageIds.includes(stage.stageId) && !isActive;
+
       return {
         ...stage,
         isActive,

@@ -19,8 +19,8 @@ const useLineStyles = makeStyles({
   container: {
     position: 'relative',
     width: '100%',
-    paddingTop: '28px',
-    paddingBottom: '100px', // Increased to prevent overlap with content below
+    paddingTop: '14px',
+    paddingBottom: '36px',
   },
   trackContainer: {
     position: 'relative',

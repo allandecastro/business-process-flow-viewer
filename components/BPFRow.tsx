@@ -15,7 +15,7 @@ import { OpenRegular, ErrorCircleRegular } from '@fluentui/react-icons';
 
 const useStyles = makeStyles({
   row: {
-    padding: '12px',
+    padding: '8px 12px',
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     backgroundColor: tokens.colorNeutralBackground1,
     transitionProperty: 'background-color',
@@ -23,7 +23,7 @@ const useStyles = makeStyles({
     cursor: 'default',
   },
   rowMobile: {
-    padding: '8px',
+    padding: '6px 8px',
   },
   rowClickable: {
     cursor: 'pointer',
@@ -35,7 +35,7 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '8px',
+    marginBottom: '4px',
     gap: '8px',
   },
   headerMobile: {

@@ -20,7 +20,7 @@
       name="parametersBPF"
       display-name-key="BpfConfiguration"
       description-key="BpfConfiguration_Desc"
-      of-type="SingleLine.Text"
+      of-type="Multiple"
       usage="input"
       required="true"
       default-value='{"bpfs":[{"bpfEntitySchemaName":"opportunitysalesprocess","lookupFieldSchemaName":"_opportunityid_value"}]}'

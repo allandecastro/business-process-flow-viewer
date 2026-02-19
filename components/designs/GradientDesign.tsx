@@ -27,6 +27,12 @@ const useGradientStyles = makeStyles({
     position: 'relative',
     height: '6px',
     borderRadius: '3px',
+    marginLeft: '10px',
+    marginRight: '10px',
+  },
+  trackContainerMobile: {
+    marginLeft: '8px',
+    marginRight: '8px',
   },
   progressBar: {
     position: 'absolute',
@@ -41,10 +47,14 @@ const useGradientStyles = makeStyles({
   markersContainer: {
     position: 'absolute',
     top: '-7px',
-    left: 0,
-    right: 0,
+    left: '-10px',
+    right: '-10px',
     display: 'flex',
     justifyContent: 'space-between',
+  },
+  markersContainerMobile: {
+    left: '-8px',
+    right: '-8px',
   },
   markerWrapper: {
     display: 'flex',
@@ -109,7 +119,7 @@ const GradientDesignComponent: React.FC<IBPFDesignProps> = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.trackContainer} style={{ backgroundColor: colors.track }}>
+      <div className={mergeClasses(styles.trackContainer, isMobile && styles.trackContainerMobile)} style={{ backgroundColor: colors.track }}>
         <div
           className={styles.progressBar}
           style={{
@@ -118,7 +128,7 @@ const GradientDesignComponent: React.FC<IBPFDesignProps> = ({
           }}
           role="presentation"
         />
-        <div className={styles.markersContainer}>
+        <div className={mergeClasses(styles.markersContainer, isMobile && styles.markersContainerMobile)}>
           {stageMetadata.map(({ stage, status, stageColor, label, shouldPulse }, index) => (
             <div key={stage.stageId} className={styles.markerWrapper}>
               <div

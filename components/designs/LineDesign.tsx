@@ -26,6 +26,12 @@ const useLineStyles = makeStyles({
     position: 'relative',
     height: '4px',
     borderRadius: '2px',
+    marginLeft: '12px',
+    marginRight: '12px',
+  },
+  trackContainerMobile: {
+    marginLeft: '10px',
+    marginRight: '10px',
   },
   progressLine: {
     position: 'absolute',
@@ -40,10 +46,14 @@ const useLineStyles = makeStyles({
   markersContainer: {
     position: 'absolute',
     top: '-10px',
-    left: 0,
-    right: 0,
+    left: '-12px',
+    right: '-12px',
     display: 'flex',
     justifyContent: 'space-between',
+  },
+  markersContainerMobile: {
+    left: '-10px',
+    right: '-10px',
   },
   markerWrapper: {
     display: 'flex',
@@ -119,13 +129,13 @@ const LineDesignComponent: React.FC<IBPFDesignProps> = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.trackContainer} style={{ backgroundColor: colors.track }}>
+      <div className={mergeClasses(styles.trackContainer, isMobile && styles.trackContainerMobile)} style={{ backgroundColor: colors.track }}>
         <div
           className={styles.progressLine}
           style={{ width: progressWidth, backgroundColor: colors.completed }}
           role="presentation"
         />
-        <div className={styles.markersContainer}>
+        <div className={mergeClasses(styles.markersContainer, isMobile && styles.markersContainerMobile)}>
           {stageMetadata.map(({ stage, status, stageColor, label, shouldPulse }, index) => (
             <div key={stage.stageId} className={styles.markerWrapper}>
               <div

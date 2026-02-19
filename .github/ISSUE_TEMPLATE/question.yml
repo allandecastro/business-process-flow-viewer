@@ -1,0 +1,94 @@
+name: Question
+description: Ask a question about using Business Process Flow Viewer
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're here to help! Please provide as much context as possible.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question category
+      description: What area does your question relate to?
+      options:
+        - Installation / Setup
+        - BPF Configuration (JSON)
+        - Design Styles
+        - Theming / Colors
+        - Performance / Caching
+        - Deployment to Dataverse
+        - Contributing / Development
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Ask your question here. Be as specific as possible.
+      placeholder: |
+        How can I configure the control for an entity with multiple BPFs?
+
+        I have an Opportunity entity with both the default sales process and a
+        custom approval process. How do I show both in the grid?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide any relevant context that might help us answer your question.
+      placeholder: |
+        - I'm running the control in a Dynamics 365 Sales environment
+        - I have 2 BPFs on the Opportunity entity
+        - I'm using the managed solution v0.1.15
+    validations:
+      required: false
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Let us know what you've already attempted.
+      placeholder: |
+        - I looked in the README but couldn't find this specific use case
+        - I tried adding two entries in the bpfs array but only one shows
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your question.
+      placeholder: Drag and drop images here or paste from clipboard.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where are you running the control?
+      options:
+        - Dataverse / Model-driven App
+        - Local Development
+        - Not applicable
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm
+      options:
+        - label: I have searched existing issues and discussions for an answer
+          required: true
+        - label: I have read the README and documentation
+          required: false

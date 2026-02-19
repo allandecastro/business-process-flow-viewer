@@ -560,20 +560,16 @@ describe('BPFService', () => {
       expect(secondWorkflowCalls).toBe(firstWorkflowCalls);
     });
 
-    it('should try alternative query when primary workflow lookup fails', async () => {
+    it('should find workflow using combined exact+contains query in single call', async () => {
       const recordId = '00000000-0000-0000-0000-000000000001';
       let workflowCallCount = 0;
 
       mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string, query?: string) => {
         if (entityName === 'workflow') {
           workflowCallCount++;
-          if (workflowCallCount === 1) {
-            // First call (exact match) returns empty
-            return Promise.resolve({ entities: [] });
-          }
-          // Second call (contains match) returns result
+          // Combined query returns a contains match (exact match not found)
           return Promise.resolve({
-            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'myopportunitysalesprocess' }],
           });
         }
         if (entityName === 'processstage') {
@@ -585,8 +581,8 @@ describe('BPFService', () => {
       });
 
       const result = await service.getBPFDataForRecords([recordId], mockConfig);
-      // Should have tried the alternative query
-      expect(workflowCallCount).toBe(2);
+      // Should only make a single workflow query (combined exact+contains)
+      expect(workflowCallCount).toBe(1);
     });
 
     it('should return null when neither workflow query finds results', async () => {

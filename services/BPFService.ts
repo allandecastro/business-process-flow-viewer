@@ -148,55 +148,56 @@ export class BPFService {
       throw new Error('Request cancelled');
     }
 
-    // Get stages first (cached)
-    const stages = await this.getProcessStages(bpfEntitySchemaName, signal);
-    if (stages.length === 0) {
+    // Validate all record IDs upfront
+    const validRecordIds = recordIds.filter(id => {
+      if (!isValidGuid(id)) {
+        log.warn(`Skipping invalid GUID: ${id}`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validRecordIds.length === 0) {
       return results;
     }
 
-    // Process in batches
-    for (let i = 0; i < recordIds.length; i += BATCH_SIZE) {
-      // Check if cancelled before each batch
-      if (signal?.aborted) {
-        throw new Error('Request cancelled');
-      }
-
-      const batch = recordIds.slice(i, i + BATCH_SIZE);
-
-      // Validate all record IDs in batch
-      const validRecordIds = batch.filter(id => {
-        if (!isValidGuid(id)) {
-          log.warn(`Skipping invalid GUID: ${id}`);
-          return false;
-        }
-        return true;
-      });
-
-      if (validRecordIds.length === 0) {
-        continue; // Skip this batch if no valid IDs
-      }
-
-      // Build OR filter for batch
-      // Example: _opportunityid_value eq 'guid1' or _opportunityid_value eq 'guid2'
-      const filterConditions = validRecordIds
+    // Build all batch queries
+    const batchPromises: Promise<{ entities: ComponentFramework.WebApi.Entity[] }>[] = [];
+    for (let i = 0; i < validRecordIds.length; i += BATCH_SIZE) {
+      const batch = validRecordIds.slice(i, i + BATCH_SIZE);
+      const filterConditions = batch
         .map(id => `${lookupFieldSchemaName} eq ${id}`)
         .join(' or ');
 
-      try {
-        // OPTIMIZED: Single call for multiple records with timeout protection
-        // Select only needed columns
-        const response = await this.fetchWithTimeout(
+      batchPromises.push(
+        this.fetchWithTimeout(
           this.webApi.retrieveMultipleRecords(
             bpfEntitySchemaName,
             `?$filter=${filterConditions}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupFieldSchemaName}&$orderby=createdon desc&$top=5000`
           ),
           REQUEST_TIMEOUT_MS,
           signal
-        );
+        )
+      );
+    }
 
+    // OPTIMIZED: Fetch stages and BPF instances in parallel
+    // Stages are only needed for mapping, not for the instances query itself
+    const [stages, ...batchResponses] = await Promise.all([
+      this.getProcessStages(bpfEntitySchemaName, signal),
+      ...batchPromises,
+    ]);
+
+    if (stages.length === 0) {
+      return results;
+    }
+
+    // Process all batch responses
+    for (const response of batchResponses) {
+      try {
         // Group by record ID (take first/latest for each)
         const instancesByRecord = new Map<string, IBPFInstanceResponse>();
-        
+
         for (const entity of response.entities) {
           const recordId = entity[lookupFieldSchemaName] as string;
           if (recordId && !instancesByRecord.has(recordId)) {
@@ -209,9 +210,8 @@ export class BPFService {
           const instance = this.mapToBPFInstance(bpfRecord, bpfEntitySchemaName, stages);
           results.set(recordId, instance);
         }
-
       } catch (error) {
-        log.warn(`Batch fetch error:`, error);
+        log.warn(`Batch processing error:`, error);
         // Don't throw - allow partial results
       }
     }
@@ -272,13 +272,17 @@ export class BPFService {
     }
 
     try {
-      // Get process ID from workflow entity
-      const processId = await this.getProcessId(bpfEntitySchemaName, signal);
+      // OPTIMIZED: Fetch processId and category labels in parallel (both are independent)
+      const [processId, categoryLabels] = await Promise.all([
+        this.getProcessId(bpfEntitySchemaName, signal),
+        this.getStageCategoryLabels(signal),
+      ]);
+
       if (!processId) {
         return [];
       }
 
-      // OPTIMIZED: Select only needed columns, with timeout protection
+      // Fetch stages (depends on processId)
       const response = await this.fetchWithTimeout(
         this.webApi.retrieveMultipleRecords(
           'processstage',
@@ -287,9 +291,6 @@ export class BPFService {
         REQUEST_TIMEOUT_MS,
         signal
       );
-
-      // Fetch category labels from metadata (cached)
-      const categoryLabels = await this.getStageCategoryLabels(signal);
 
       const stages: IBPFStage[] = (response.entities as IProcessStageResponse[]).map(
         (stage, index) => ({
@@ -345,36 +346,23 @@ export class BPFService {
     }
 
     try {
-      // Query workflow entity
+      // Single query: exact match OR contains (covers BPFs with different uniquename)
       // category eq 4 means Business Process Flow
       const escapedName = escapeODataValue(bpfEntitySchemaName);
       const response = await this.fetchWithTimeout(
         this.webApi.retrieveMultipleRecords(
           'workflow',
-          `?$filter=uniquename eq '${escapedName}' and category eq 4&$select=workflowid,name&$top=1`
+          `?$filter=(uniquename eq '${escapedName}' or contains(uniquename,'${escapedName}')) and category eq 4&$select=workflowid,name,uniquename&$top=5`
         ),
         REQUEST_TIMEOUT_MS,
         signal
       );
 
       if (response.entities && response.entities.length > 0) {
-        const processId = (response.entities[0] as IWorkflowResponse).workflowid;
-        this.workflowCache.set(bpfEntitySchemaName, processId);
-        return processId;
-      }
-
-      // Try alternative: query by name (some BPFs have different uniquename)
-      const altResponse = await this.fetchWithTimeout(
-        this.webApi.retrieveMultipleRecords(
-          'workflow',
-          `?$filter=contains(uniquename,'${escapedName}') and category eq 4&$select=workflowid,name&$top=1`
-        ),
-        REQUEST_TIMEOUT_MS,
-        signal
-      );
-
-      if (altResponse.entities && altResponse.entities.length > 0) {
-        const processId = (altResponse.entities[0] as IWorkflowResponse).workflowid;
+        // Prefer exact match over contains match
+        const workflows = response.entities as (IWorkflowResponse & { uniquename?: string })[];
+        const exactMatch = workflows.find(w => w.uniquename === bpfEntitySchemaName);
+        const processId = (exactMatch || workflows[0]).workflowid;
         this.workflowCache.set(bpfEntitySchemaName, processId);
         return processId;
       }

@@ -204,29 +204,43 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     const entityName = firstRecord.getNamedReference?.()?.entityType ||
                        this.getEntityNameFromConfig();
 
-    // Resolve display name once (async with Dataverse metadata, cached)
+    // Build initial records and identify which need fetching
+    const newRecordIds: string[] = [];
+    const primaryColumn = dataset.columns.find((c: ComponentFramework.PropertyHelper.DataSetApi.Column) => c.isPrimary);
+
+    for (const recordId of recordIds) {
+      const existingRecord = this.records.find(r => r.recordId === recordId);
+      if (!existingRecord || !this.fetchedRecordIds.has(recordId)) {
+        newRecordIds.push(recordId);
+      }
+    }
+
+    // OPTIMIZED: Start BPF fetch and entity display name resolution in parallel
+    // Both are independent async operations that hit Dataverse
+    const bpfDataPromise = newRecordIds.length > 0
+      ? this.bpfService.getBPFDataForRecords(
+          newRecordIds,
+          this.bpfConfig,
+          this.abortController.signal
+        )
+      : Promise.resolve(new Map<string, import('./types').IBPFInstance | null>());
+
     const entityDisplayName = await this.getEntityDisplayName(entityName);
 
-    // Build initial records with loading state
-    const newRecordIds: string[] = [];
+    // Now build the initial records with display name
     const updatedRecords: IRecordBPFData[] = [];
 
     for (const recordId of recordIds) {
       const record = dataset.records[recordId];
-      const primaryColumn = dataset.columns.find((c: ComponentFramework.PropertyHelper.DataSetApi.Column) => c.isPrimary);
       const recordName = primaryColumn
         ? record.getFormattedValue(primaryColumn.name) || recordId
         : recordId;
 
-      // Check if already fetched
       const existingRecord = this.records.find(r => r.recordId === recordId);
 
       if (existingRecord && this.fetchedRecordIds.has(recordId)) {
-        // Reuse existing data
         updatedRecords.push(existingRecord);
       } else {
-        // Need to fetch
-        newRecordIds.push(recordId);
         updatedRecords.push({
           recordId,
           recordName,
@@ -242,14 +256,10 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     this.records = updatedRecords;
     this.isLoading = newRecordIds.length > 0;
 
-    // OPTIMIZED: Batch fetch new records
+    // Await the BPF data (already in-flight since earlier)
     if (newRecordIds.length > 0) {
       try {
-        const bpfData = await this.bpfService.getBPFDataForRecords(
-          newRecordIds,
-          this.bpfConfig,
-          this.abortController.signal
-        );
+        const bpfData = await bpfDataPromise;
 
         // Discard stale results if a newer request has started
         if (currentGeneration !== this.requestGeneration) {

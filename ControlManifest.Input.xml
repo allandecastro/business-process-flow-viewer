@@ -3,7 +3,7 @@
   <control
     namespace="ADC"
     constructor="BusinessProcessFlowViewer"
-    version="0.1.7"
+    version="0.1.8"
     display-name-key="BusinessProcessFlowViewer"
     description-key="BusinessProcessFlowViewer_Desc"
     control-type="virtual"

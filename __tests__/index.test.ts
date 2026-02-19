@@ -44,7 +44,7 @@ function createControlContext(overrides?: Partial<Record<string, unknown>>): Com
     parameters: {
       records: mockDataset,
       parametersBPF: {
-        raw: '{"bpfs":[{"bpfEntitySchemaName":"opportunitysalesprocess","lookupFieldSchemaName":"opportunityid_value"}]}',
+        raw: '{"bpfs":[{"bpfEntitySchemaName":"opportunitysalesprocess","lookupFieldSchemaName":"_opportunityid_value"}]}',
         type: 'SingleLine.Text',
       },
       designStyle: { raw: 'chevron' },

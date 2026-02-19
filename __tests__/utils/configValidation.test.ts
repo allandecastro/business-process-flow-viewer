@@ -118,11 +118,18 @@ describe('validateBPFConfiguration', () => {
       expect(result.isValid).toBe(false);
     });
 
+    it('accepts underscore-prefixed lookup field names', () => {
+      const result = validateBPFConfiguration({
+        bpfs: [{ bpfEntitySchemaName: 'opportunitysalesprocess', lookupFieldSchemaName: '_opportunityid_value' }],
+      });
+      expect(result.isValid).toBe(true);
+    });
+
     it('flags unexpected properties', () => {
       const result = validateBPFConfiguration({
         bpfs: [{
           bpfEntitySchemaName: 'valid_entity',
-          lookupFieldSchemaName: 'valid_field',
+          lookupFieldSchemaName: '_valid_field',
           extraProp: 'should not be here',
         }],
       });
@@ -136,7 +143,7 @@ describe('validateBPFConfiguration', () => {
       const result = validateBPFConfiguration({
         bpfs: [{
           bpfEntitySchemaName: 'opportunitysalesprocess',
-          lookupFieldSchemaName: 'opportunityid_value',
+          lookupFieldSchemaName: '_opportunityid_value',
         }],
       });
       expect(result.isValid).toBe(true);
@@ -147,8 +154,8 @@ describe('validateBPFConfiguration', () => {
     it('accepts multiple valid BPF definitions', () => {
       const result = validateBPFConfiguration({
         bpfs: [
-          { bpfEntitySchemaName: 'entityA', lookupFieldSchemaName: 'fieldA' },
-          { bpfEntitySchemaName: 'entityB', lookupFieldSchemaName: 'fieldB' },
+          { bpfEntitySchemaName: 'entityA', lookupFieldSchemaName: '_fieldA_value' },
+          { bpfEntitySchemaName: 'entityB', lookupFieldSchemaName: '_fieldB_value' },
         ],
       });
       expect(result.isValid).toBe(true);

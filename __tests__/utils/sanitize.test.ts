@@ -5,6 +5,7 @@
 import {
   sanitizeText,
   isValidEntityName,
+  isValidFieldName,
   isValidGuid,
   isValidHexColor,
   sanitizeUrl,
@@ -82,6 +83,32 @@ describe('isValidEntityName', () => {
   it('returns false for non-string input', () => {
     // @ts-expect-error testing number input
     expect(isValidEntityName(123)).toBe(false);
+  });
+});
+
+describe('isValidFieldName', () => {
+  it('returns true for standard field names', () => {
+    expect(isValidFieldName('accountid')).toBe(true);
+    expect(isValidFieldName('custom_field')).toBe(true);
+  });
+
+  it('returns true for underscore-prefixed lookup fields', () => {
+    expect(isValidFieldName('_opportunityid_value')).toBe(true);
+    expect(isValidFieldName('_leadid_value')).toBe(true);
+    expect(isValidFieldName('_parentcustomerid_value')).toBe(true);
+  });
+
+  it('returns false for names starting with number', () => {
+    expect(isValidFieldName('123field')).toBe(false);
+  });
+
+  it('returns false for names with special characters', () => {
+    expect(isValidFieldName('field-name')).toBe(false);
+    expect(isValidFieldName('field.name')).toBe(false);
+  });
+
+  it('returns false for empty input', () => {
+    expect(isValidFieldName('')).toBe(false);
   });
 });
 

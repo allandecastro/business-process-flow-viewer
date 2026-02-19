@@ -45,6 +45,20 @@ export function isValidEntityName(name: string): boolean {
 }
 
 /**
+ * Validate Dataverse field/column name format
+ *
+ * Lookup field schema names in Dataverse start with underscore
+ * (e.g. _opportunityid_value, _leadid_value).
+ *
+ * @param name - Field name to validate
+ * @returns True if valid field name format
+ */
+export function isValidFieldName(name: string): boolean {
+  if (!name || typeof name !== 'string') return false;
+  return /^[a-z_][a-z0-9_]{0,127}$/i.test(name);
+}
+
+/**
  * Validate GUID format
  *
  * Dataverse uses GUIDs for record IDs. This validates the standard GUID format:

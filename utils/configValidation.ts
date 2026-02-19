@@ -1,5 +1,5 @@
 import type { IBPFConfiguration } from '../types';
-import { isValidEntityName } from './sanitize';
+import { isValidEntityName, isValidFieldName } from './sanitize';
 
 /**
  * Validation error details
@@ -121,11 +121,11 @@ export function validateBPFConfiguration(config: unknown): ValidationResult {
         field: `bpfs[${index}].lookupFieldSchemaName`,
         message: 'Must be a string',
       });
-    } else if (!isValidEntityName(entry.lookupFieldSchemaName)) {
+    } else if (!isValidFieldName(entry.lookupFieldSchemaName)) {
       errors.push({
         field: `bpfs[${index}].lookupFieldSchemaName`,
         message:
-          'Invalid field name format. Must start with letter and contain only alphanumeric characters and underscores.',
+          'Invalid field name format. Must start with letter or underscore and contain only alphanumeric characters and underscores.',
       });
     }
 

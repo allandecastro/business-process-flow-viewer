@@ -577,6 +577,18 @@ describe('BPFService', () => {
             entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0 }],
           });
         }
+        if (entityName === 'opportunitysalesprocess') {
+          // Return a BPF instance so the fallback path (getProcessStages) is triggered
+          return Promise.resolve({
+            entities: [{
+              businessprocessflowinstanceid: 'bpf-001',
+              _opportunityid_value: recordId,
+              _activestageid_value: 'stage1',
+              traversedpath: '',
+              statuscode: 1,
+            }],
+          });
+        }
         return Promise.resolve({ entities: [] });
       });
 
@@ -893,6 +905,250 @@ describe('BPFService', () => {
       expect(instance?.processId).toBe('');
       expect(instance?.traversedPath).toBe('');
       expect(instance?.statusCode).toBe(0);
+    });
+  });
+
+  describe('RetrieveActivePath', () => {
+    const validInstanceId = '10000000-0000-0000-0000-000000000001';
+    const recordId = '00000000-0000-0000-0000-000000000001';
+    let originalFetch: typeof global.fetch;
+
+    beforeEach(() => {
+      originalFetch = global.fetch;
+    });
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    function setupBPFInstanceMock(instanceId: string) {
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'opportunitysalesprocess') {
+          return Promise.resolve({
+            entities: [{
+              businessprocessflowinstanceid: instanceId,
+              _opportunityid_value: recordId,
+              _activestageid_value: 'stage2',
+              traversedpath: 'stage1',
+              statuscode: 1,
+            }],
+          });
+        }
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [
+              { processstageid: 'stage1', stagename: 'Qualify', stagecategory: 0 },
+              { processstageid: 'stage2', stagename: 'Develop', stagecategory: 1 },
+              { processstageid: 'stage3', stagename: 'Propose', stagecategory: 2 },
+              { processstageid: 'stageX', stagename: 'Conditional Branch', stagecategory: 3 },
+            ],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+    }
+
+    it('should use RetrieveActivePath stages instead of all process stages', async () => {
+      setupBPFInstanceMock(validInstanceId);
+
+      // Mock fetch to return only 3 of 4 stages (simulating conditional BPF)
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          value: [
+            { processstageid: 'stage1', stagename: 'Qualify', stagecategory: 0 },
+            { processstageid: 'stage2', stagename: 'Develop', stagecategory: 1 },
+            { processstageid: 'stage3', stagename: 'Propose', stagecategory: 2 },
+          ],
+        }),
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
+      const instance = result.get(recordId);
+
+      expect(instance).toBeDefined();
+      // Should have 3 stages (active path), NOT 4 (all process stages)
+      expect(instance?.stages.length).toBe(3);
+      expect(instance?.stages.map(s => s.stageId)).toEqual(['stage1', 'stage2', 'stage3']);
+
+      // fetch should have been called with RetrieveActivePath
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(`RetrieveActivePath(ProcessInstanceId=${validInstanceId})`),
+        expect.any(Object)
+      );
+
+      // processstage query should NOT have been called (no fallback needed)
+      const processStageCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
+        (call) => call[0] === 'processstage'
+      );
+      expect(processStageCalls.length).toBe(0);
+    });
+
+    it('should fall back to getProcessStages when fetch fails', async () => {
+      setupBPFInstanceMock(validInstanceId);
+
+      // Mock fetch to fail
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
+      const instance = result.get(recordId);
+
+      expect(instance).toBeDefined();
+      // Should have all 4 stages from fallback (getProcessStages)
+      expect(instance?.stages.length).toBe(4);
+
+      // processstage query SHOULD have been called (fallback)
+      const processStageCalls = mockWebAPI.retrieveMultipleRecords.mock.calls.filter(
+        (call) => call[0] === 'processstage'
+      );
+      expect(processStageCalls.length).toBeGreaterThan(0);
+    });
+
+    it('should fall back when RetrieveActivePath returns non-OK response', async () => {
+      setupBPFInstanceMock(validInstanceId);
+
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
+      const instance = result.get(recordId);
+
+      expect(instance).toBeDefined();
+      // Should fall back to all process stages
+      expect(instance?.stages.length).toBe(4);
+    });
+
+    it('should cache active path stages per instance', async () => {
+      setupBPFInstanceMock(validInstanceId);
+
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          value: [
+            { processstageid: 'stage1', stagename: 'Qualify', stagecategory: 0 },
+            { processstageid: 'stage2', stagename: 'Develop', stagecategory: 1 },
+          ],
+        }),
+      });
+
+      // First call
+      await service.getBPFDataForRecords([recordId], mockConfig);
+      const firstFetchCount = (global.fetch as jest.Mock).mock.calls.length;
+
+      // Second call - should use cache
+      await service.getBPFDataForRecords([recordId], mockConfig);
+      const secondFetchCount = (global.fetch as jest.Mock).mock.calls.length;
+
+      // fetch should not have been called again
+      expect(secondFetchCount).toBe(firstFetchCount);
+    });
+
+    it('should handle conditional stages where different instances have different paths', async () => {
+      const recordId2 = '00000000-0000-0000-0000-000000000002';
+      const instanceId2 = '20000000-0000-0000-0000-000000000002';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'opportunitysalesprocess') {
+          return Promise.resolve({
+            entities: [
+              {
+                businessprocessflowinstanceid: validInstanceId,
+                _opportunityid_value: recordId,
+                _activestageid_value: 'stage2',
+                traversedpath: 'stage1',
+                statuscode: 1,
+              },
+              {
+                businessprocessflowinstanceid: instanceId2,
+                _opportunityid_value: recordId2,
+                _activestageid_value: 'stageB',
+                traversedpath: 'stageA',
+                statuscode: 1,
+              },
+            ],
+          });
+        }
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [
+              { processstageid: 'stage1', stagename: 'Common', stagecategory: 0 },
+              { processstageid: 'stage2', stagename: 'Path A', stagecategory: 1 },
+              { processstageid: 'stageA', stagename: 'Path B Start', stagecategory: 1 },
+              { processstageid: 'stageB', stagename: 'Path B End', stagecategory: 2 },
+            ],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      // Mock fetch to return different active paths per instance
+      global.fetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes(validInstanceId)) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              value: [
+                { processstageid: 'stage1', stagename: 'Common', stagecategory: 0 },
+                { processstageid: 'stage2', stagename: 'Path A', stagecategory: 1 },
+              ],
+            }),
+          });
+        }
+        if (url.includes(instanceId2)) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              value: [
+                { processstageid: 'stageA', stagename: 'Path B Start', stagecategory: 0 },
+                { processstageid: 'stageB', stagename: 'Path B End', stagecategory: 1 },
+              ],
+            }),
+          });
+        }
+        return Promise.reject(new Error('Unknown URL'));
+      });
+
+      const result = await service.getBPFDataForRecords([recordId, recordId2], mockConfig);
+
+      const instance1 = result.get(recordId);
+      const instance2 = result.get(recordId2);
+
+      // Instance 1 should have 2 stages (Path A)
+      expect(instance1?.stages.length).toBe(2);
+      expect(instance1?.stages.map(s => s.stageId)).toEqual(['stage1', 'stage2']);
+
+      // Instance 2 should have 2 stages (Path B)
+      expect(instance2?.stages.length).toBe(2);
+      expect(instance2?.stages.map(s => s.stageId)).toEqual(['stageA', 'stageB']);
+    });
+
+    it('should fall back gracefully when instanceId is not a valid GUID', async () => {
+      // Use invalid GUID for instanceId
+      setupBPFInstanceMock('invalid-not-a-guid');
+
+      global.fetch = jest.fn();
+
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
+      const instance = result.get(recordId);
+
+      expect(instance).toBeDefined();
+      // Should fall back to all process stages
+      expect(instance?.stages.length).toBe(4);
+      // fetch should NOT have been called
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 

@@ -62,8 +62,9 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     this.context = context;
     this.notifyOutputChanged = notifyOutputChanged;
 
-    // Initialize BPF Service
-    this.bpfService = new BPFService(context.webAPI);
+    // Initialize BPF Service with client URL for RetrieveActivePath function calls
+    const clientUrl = (globalThis as any).Xrm?.Utility?.getGlobalContext?.()?.getClientUrl?.() || '';
+    this.bpfService = new BPFService(context.webAPI, clientUrl);
 
     // Parse BPF configuration
     this.parseBPFConfiguration();

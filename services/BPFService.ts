@@ -60,14 +60,17 @@ const BATCH_SIZE = 10;
 
 export class BPFService {
   private webApi: WebApiClient;
+  private clientUrl: string;
   private stageCache: Map<string, ICachedStages> = new Map();
   private workflowCache: Map<string, string> = new Map(); // bpfEntityName -> processId
   private pendingRequests: Map<string, Promise<IBPFInstance | null>> = new Map();
   private categoryLabelsCache: Map<number, string> | null = null;
   private categoryLabelsCacheTime = 0;
+  private activePathCache: Map<string, { stages: IBPFStage[]; timestamp: number }> = new Map();
 
-  constructor(webApi: WebApiClient) {
+  constructor(webApi: WebApiClient, clientUrl: string = '') {
     this.webApi = webApi;
+    this.clientUrl = clientUrl;
   }
 
   /**
@@ -188,40 +191,73 @@ export class BPFService {
       );
     }
 
-    // OPTIMIZED: Fetch stages and BPF instances in parallel
-    // Stages are only needed for mapping, not for the instances query itself
-    perf?.mark('parallel:stages+instances');
-    const [stages, ...batchResponses] = await Promise.all([
-      this.getProcessStages(bpfEntitySchemaName, signal, perf),
+    // Fetch BPF instances and category labels in parallel
+    // (category labels are needed for active path stage name resolution)
+    perf?.mark('parallel:instances+categoryLabels');
+    const [categoryLabels, ...batchResponses] = await Promise.all([
+      this.getStageCategoryLabels(signal),
       ...batchPromises,
     ]);
-    perf?.measure('parallel:stages+instances');
+    perf?.measure('parallel:instances+categoryLabels');
 
-    if (stages.length === 0) {
+    // Collect all unique BPF instances grouped by parent record ID
+    const instancesByRecord = new Map<string, IBPFInstanceResponse>();
+    for (const response of batchResponses) {
+      for (const entity of response.entities) {
+        const recordId = entity[lookupFieldSchemaName] as string;
+        if (recordId && !instancesByRecord.has(recordId)) {
+          instancesByRecord.set(recordId, entity as IBPFInstanceResponse);
+        }
+      }
+    }
+
+    if (instancesByRecord.size === 0) {
       return results;
     }
 
-    // Process all batch responses
-    for (const response of batchResponses) {
+    // Fetch active path for each instance in parallel using RetrieveActivePath
+    perf?.mark('retrieveActivePaths');
+    const activePathEntries = await Promise.all(
+      [...instancesByRecord.entries()].map(async ([recordId, bpfRecord]) => {
+        const instanceId = bpfRecord.businessprocessflowinstanceid as string;
+        if (!instanceId) return { recordId, stages: null as IBPFStage[] | null };
+
+        try {
+          const stages = await this.retrieveActivePath(instanceId, categoryLabels, signal);
+          return { recordId, stages };
+        } catch (error) {
+          log.warn(`RetrieveActivePath failed for instance ${instanceId}, will use fallback:`, error);
+          return { recordId, stages: null as IBPFStage[] | null };
+        }
+      })
+    );
+    perf?.measure('retrieveActivePaths');
+
+    // For any instances where RetrieveActivePath failed, fall back to all stages
+    const needsFallback = activePathEntries.some(entry => entry.stages === null);
+    let fallbackStages: IBPFStage[] | null = null;
+    if (needsFallback) {
+      perf?.mark('fallback:getProcessStages');
       try {
-        // Group by record ID (take first/latest for each)
-        const instancesByRecord = new Map<string, IBPFInstanceResponse>();
-
-        for (const entity of response.entities) {
-          const recordId = entity[lookupFieldSchemaName] as string;
-          if (recordId && !instancesByRecord.has(recordId)) {
-            instancesByRecord.set(recordId, entity as IBPFInstanceResponse);
-          }
-        }
-
-        // Map to BPF instances
-        for (const [recordId, bpfRecord] of instancesByRecord) {
-          const instance = this.mapToBPFInstance(bpfRecord, bpfEntitySchemaName, stages);
-          results.set(recordId, instance);
-        }
+        fallbackStages = await this.getProcessStages(bpfEntitySchemaName, signal, perf);
       } catch (error) {
-        log.warn(`Batch processing error:`, error);
-        // Don't throw - allow partial results
+        log.warn('Fallback getProcessStages also failed:', error);
+        fallbackStages = [];
+      }
+      perf?.measure('fallback:getProcessStages');
+    }
+
+    // Map each instance using its active-path stages (or fallback)
+    for (const { recordId, stages: activePathStages } of activePathEntries) {
+      try {
+        const bpfRecord = instancesByRecord.get(recordId)!;
+        const stageDefinitions = activePathStages || fallbackStages || [];
+        if (stageDefinitions.length === 0) continue;
+
+        const instance = this.mapToBPFInstance(bpfRecord, bpfEntitySchemaName, stageDefinitions);
+        results.set(recordId, instance);
+      } catch (error) {
+        log.warn(`Instance mapping error for record ${recordId}:`, error);
       }
     }
 
@@ -464,6 +500,84 @@ export class BPFService {
   }
 
   /**
+   * Fetch the active path stages for a specific BPF instance using
+   * the Dataverse RetrieveActivePath unbound function.
+   *
+   * This is critical for BPFs with conditional branching — only the
+   * stages in the active path should be displayed, not all stages
+   * defined in the process.
+   *
+   * Falls back to null if the function is unavailable so callers
+   * can use getProcessStages() as a fallback.
+   */
+  private async retrieveActivePath(
+    instanceId: string,
+    categoryLabels: Map<number, string>,
+    signal?: AbortSignal
+  ): Promise<IBPFStage[]> {
+    if (!isValidGuid(instanceId)) {
+      throw new BPFError('Invalid BPF instance ID', ErrorCodes.VALIDATION_ERROR);
+    }
+
+    // Check cache
+    const cached = this.activePathCache.get(instanceId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TIMEOUT_MS) {
+      return cached.stages;
+    }
+
+    if (signal?.aborted) {
+      throw new Error('Request cancelled');
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    // Forward parent signal's abort
+    if (signal) {
+      signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+
+    try {
+      const url = `${this.clientUrl}/api/data/v9.2/RetrieveActivePath(ProcessInstanceId=${instanceId})`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'OData-MaxVersion': '4.0',
+          'OData-Version': '4.0',
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new BPFError(
+          `RetrieveActivePath failed: ${response.status} ${response.statusText}`,
+          ErrorCodes.FETCH_FAILED
+        );
+      }
+
+      const data = await response.json();
+      const stages: IBPFStage[] = ((data.value || []) as IProcessStageResponse[]).map(
+        (stage, index) => ({
+          stageId: stage.processstageid,
+          stageName: stage.stagename,
+          stageCategory: stage.stagecategory,
+          stageCategoryName: categoryLabels.get(stage.stagecategory) || stage.stagename,
+          stageOrder: index,
+          isActive: false,
+          isCompleted: false,
+        })
+      );
+
+      // Cache the result
+      this.activePathCache.set(instanceId, { stages, timestamp: Date.now() });
+      return stages;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  /**
    * Get BPF data for a single record (with deduplication)
    * Used for lazy loading individual records
    */
@@ -549,6 +663,7 @@ export class BPFService {
     this.pendingRequests.clear();
     this.categoryLabelsCache = null;
     this.categoryLabelsCacheTime = 0;
+    this.activePathCache.clear();
   }
 
   /**
@@ -557,5 +672,8 @@ export class BPFService {
   public clearCacheForBPF(bpfEntitySchemaName: string): void {
     this.stageCache.delete(bpfEntitySchemaName);
     this.workflowCache.delete(bpfEntitySchemaName);
+    // Active path cache is per instance ID, not per BPF entity name,
+    // so we clear all entries as we can't map instance -> BPF entity
+    this.activePathCache.clear();
   }
 }

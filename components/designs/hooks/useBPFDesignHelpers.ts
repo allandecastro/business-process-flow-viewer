@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { IBPFStage, IStageColors, DisplayMode } from '../../../types';
-import { getStageColor, getStageLabel } from '../../../utils/themeUtils';
+import { getStageColor, getStageLabel, toTitleCase } from '../../../utils/themeUtils';
 
 /**
  * Stage status type
@@ -87,8 +87,15 @@ export function useBPFDesignHelpers(
         const stageColor = getStageColor(status, colors);
         const label = getStageLabel(stage.stageName, stage.stageCategoryName, displayMode);
 
+        // Title-case stage names so tooltips display consistently
+        const titleCasedStage = {
+          ...stage,
+          stageName: toTitleCase(stage.stageName),
+          stageCategoryName: toTitleCase(stage.stageCategoryName),
+        };
+
         return {
-          stage,
+          stage: titleCasedStage,
           status,
           stageColor,
           label,

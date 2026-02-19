@@ -112,14 +112,22 @@ export function getStageColor(
 }
 
 /**
- * Get stage label based on display mode
+ * Capitalize the first letter of each word
+ */
+export function toTitleCase(text: string): string {
+  return text.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/**
+ * Get stage label based on display mode (title-cased)
  */
 export function getStageLabel(
   stageName: string,
   categoryName: string,
   displayMode: 'stage' | 'category'
 ): string {
-  return displayMode === 'stage' ? stageName : categoryName;
+  const label = displayMode === 'stage' ? stageName : categoryName;
+  return toTitleCase(label);
 }
 
 /**

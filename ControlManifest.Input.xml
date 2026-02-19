@@ -87,7 +87,7 @@
       of-type="Enum"
       usage="input"
       required="true"
-      default-value="yes"
+      default-value="no"
     >
       <value name="yes" display-name-key="Yes">yes</value>
       <value name="no" display-name-key="No">no</value>

@@ -1,10 +1,9 @@
 /**
- * BusinessProcessFlowViewer v2
- * 
+ * BusinessProcessFlowViewer
+ *
  * Virtual PCF Control with optimized Dataverse calls
- * 
+ *
  * @author Allan De Castro
- * @version 2.0.0
  */
 
 import * as React from 'react';
@@ -28,7 +27,7 @@ import {
 } from './utils/themeUtils';
 import { getErrorMessage, BPFError, ErrorCodes } from './utils/errorMessages';
 import { validateBPFConfiguration } from './utils/configValidation';
-import { isValidEntityName, isValidGuid } from './utils/sanitize';
+import { isValidEntityName, isValidGuid, isValidHexColor } from './utils/sanitize';
 import { logger } from './utils/logger';
 import { createPerfTracker } from './utils/perfTracker';
 
@@ -52,6 +51,15 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
   private abortController: AbortController | null = null;
   private requestGeneration: number = 0;
 
+  // Bound handlers (created once in init to preserve reference identity for React.memo)
+  private boundNavigate: (entityName: string, recordId: string) => void = () => {};
+  private boundRefresh: () => void = () => {};
+
+  // Cached settings/colors to avoid creating new objects every render
+  private cachedSettings: IControlSettings | null = null;
+  private cachedColors: IStageColors | null = null;
+  private lastSettingsVersion: string = '';
+
   /**
    * Initialize the control
    */
@@ -61,6 +69,10 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
   ): void {
     this.context = context;
     this.notifyOutputChanged = notifyOutputChanged;
+
+    // Bind handlers once for stable references (preserves React.memo optimization)
+    this.boundNavigate = this.handleNavigate.bind(this);
+    this.boundRefresh = this.handleRefresh.bind(this);
 
     // Initialize BPF Service with client URL for RetrieveActivePath function calls
     const clientUrl = (globalThis as any).Xrm?.Utility?.getGlobalContext?.()?.getClientUrl?.() || '';
@@ -125,19 +137,24 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
   }
 
   /**
-   * Get colors based on settings
+   * Get colors based on settings, validating hex inputs
    */
   private getColors(): IStageColors {
     const params = this.context.parameters;
     const settings = this.getSettings();
 
+    const validHex = (raw: string | null | undefined): string | undefined => {
+      if (!raw) return undefined;
+      return isValidHexColor(raw) ? raw : undefined;
+    };
+
     const customColors = getCustomColors(
-      params.completedColor?.raw || undefined,
-      params.completedTextColor?.raw || undefined,
-      params.activeColor?.raw || undefined,
-      params.activeTextColor?.raw || undefined,
-      params.inactiveColor?.raw || undefined,
-      params.inactiveTextColor?.raw || undefined
+      validHex(params.completedColor?.raw),
+      validHex(params.completedTextColor?.raw),
+      validHex(params.activeColor?.raw),
+      validHex(params.activeTextColor?.raw),
+      validHex(params.inactiveColor?.raw),
+      validHex(params.inactiveTextColor?.raw)
     );
 
     return resolveColors(
@@ -154,14 +171,29 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     this.context = context;
     const dataset = context.parameters.records;
 
-    // Check if dataset has changed
-    const datasetVersion = `${dataset.sortedRecordIds?.length || 0}_${dataset.loading}`;
+    // Check if dataset has changed (include first few record IDs to detect view changes)
+    const recordIds = dataset.sortedRecordIds || [];
+    const idSample = recordIds.slice(0, 5).join(',');
+    const datasetVersion = `${recordIds.length}_${idSample}_${dataset.loading}`;
     const datasetChanged = datasetVersion !== this.lastDatasetVersion;
     this.lastDatasetVersion = datasetVersion;
 
     // Process dataset if changed and not loading
-    if (datasetChanged && !dataset.loading && dataset.sortedRecordIds) {
-      this.processDataset(dataset);
+    if (datasetChanged && !dataset.loading && recordIds.length >= 0) {
+      this.processDataset(dataset).catch(e => {
+        logger.error('Unhandled error in processDataset:', e);
+        this.error = getErrorMessage(e);
+        this.isLoading = false;
+        this.notifyOutputChanged();
+      });
+    }
+
+    // Cache settings/colors to preserve reference identity for React.memo
+    const settingsVersion = `${context.parameters.designStyle?.raw}_${context.parameters.displayMode?.raw}_${context.parameters.recordNameSize?.raw}_${context.parameters.showEntityName?.raw}_${context.parameters.enableNavigation?.raw}_${context.parameters.showPulseAnimation?.raw}_${context.parameters.usePlatformTheme?.raw}`;
+    if (settingsVersion !== this.lastSettingsVersion) {
+      this.lastSettingsVersion = settingsVersion;
+      this.cachedSettings = this.getSettings();
+      this.cachedColors = this.getColors();
     }
 
     // Get platform theme if available (PCF provides Fluent v9 Theme via fluentDesignLanguage)
@@ -169,15 +201,15 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
     return React.createElement(BPFViewer, {
       records: this.records,
-      settings: this.getSettings(),
-      colors: this.getColors(),
+      settings: this.cachedSettings || this.getSettings(),
+      colors: this.cachedColors || this.getColors(),
       isLoading: this.isLoading || dataset.loading,
       error: this.error,
       platformTheme,
       allocatedWidth: context.mode.allocatedWidth,
       allocatedHeight: context.mode.allocatedHeight,
-      onNavigate: this.handleNavigate.bind(this),
-      onRefresh: this.handleRefresh.bind(this),
+      onNavigate: this.boundNavigate,
+      onRefresh: this.boundRefresh,
     });
   }
 
@@ -216,9 +248,10 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     // Build initial records and identify which need fetching
     const newRecordIds: string[] = [];
     const primaryColumn = dataset.columns.find((c: ComponentFramework.PropertyHelper.DataSetApi.Column) => c.isPrimary);
+    const existingRecordMap = new Map(this.records.map(r => [r.recordId, r]));
 
     for (const recordId of recordIds) {
-      const existingRecord = this.records.find(r => r.recordId === recordId);
+      const existingRecord = existingRecordMap.get(recordId);
       if (!existingRecord || !this.fetchedRecordIds.has(recordId)) {
         newRecordIds.push(recordId);
       }
@@ -249,7 +282,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
         ? record.getFormattedValue(primaryColumn.name) || recordId
         : recordId;
 
-      const existingRecord = this.records.find(r => r.recordId === recordId);
+      const existingRecord = existingRecordMap.get(recordId);
 
       if (existingRecord && this.fetchedRecordIds.has(recordId)) {
         updatedRecords.push(existingRecord);
@@ -271,6 +304,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
     // Await the BPF data (already in-flight since earlier)
     if (newRecordIds.length > 0) {
+      const newRecordIdSet = new Set(newRecordIds);
+
       try {
         const bpfData = await bpfDataPromise;
         perf.measure('getBPFDataForRecords');
@@ -282,7 +317,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
         // Update records with fetched data
         this.records = this.records.map(record => {
-          if (newRecordIds.includes(record.recordId)) {
+          if (newRecordIdSet.has(record.recordId)) {
             this.fetchedRecordIds.add(record.recordId);
             return {
               ...record,
@@ -308,7 +343,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
         // Mark records as errored
         this.records = this.records.map(record => {
-          if (newRecordIds.includes(record.recordId)) {
+          if (newRecordIdSet.has(record.recordId)) {
             return {
               ...record,
               isLoading: false,

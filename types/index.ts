@@ -34,7 +34,7 @@ export interface IBPFDefinition {
 // ============================================
 
 /** Visual design style for rendering BPF stages */
-export type DesignStyle = 'chevron' | 'circles' | 'pills' | 'segmented' | 'timeline' | 'stepper' | 'gradient' | 'line' | 'fraction';
+export type DesignStyle = 'chevron' | 'circles' | 'pills' | 'segmented' | 'stepper' | 'gradient' | 'line' | 'fraction';
 
 /** Whether stage labels show the stage name or the stage category name */
 export type DisplayMode = 'stage' | 'category';

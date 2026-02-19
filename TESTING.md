@@ -20,7 +20,7 @@ This guide explains how to test the Business Process Flow Viewer control with mo
    - Then navigate to: `http://localhost:8080/test.html`
 
 3. **Test different styles:**
-   - Use the dropdowns to switch between all 6 design styles
+   - Use the dropdowns to switch between all 8 design styles
    - Try different display modes (Stage Name vs Category)
    - Adjust record name sizes
    - Click "Refresh" to apply changes
@@ -64,8 +64,10 @@ The `test.html` file includes 8 sample records:
 2. **Circles** - Connected circles with stage numbers/checkmarks
 3. **Pills** - Rounded badge-style horizontal layout
 4. **Segmented** - Single progress bar with colored segments
-5. **Timeline** - Horizontal flow with dots, arrows, and labels
-6. **Stepper** - Numbered boxes with connecting lines
+5. **Stepper** - Numbered boxes with connecting lines
+6. **Gradient** - Gradient progress bar with stage markers
+7. **Line** - Linear progress track with markers
+8. **Fraction** - Compact fraction display (e.g. 2/5) with progress bar
 
 ## Testing Scenarios
 
@@ -101,7 +103,7 @@ The `test.html` file includes 8 sample records:
 
 The test harness lets you configure:
 
-- **Design Style** - 6 different visual styles
+- **Design Style** - 8 different visual styles
 - **Display Mode** - Stage name or category name
 - **Record Name Size** - Small, Medium, Large
 - **Show Entity Name** - Display entity badges (Opportunity, Lead, etc.)

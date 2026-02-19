@@ -7,6 +7,7 @@
 
 import * as React from 'react';
 import { makeStyles, tokens } from '@fluentui/react-components';
+import { logger } from '../utils/logger';
 
 const useErrorFallbackStyles = makeStyles({
   container: {
@@ -74,7 +75,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('[BPF Viewer] Error caught by ErrorBoundary:', error, errorInfo);
+    logger.error('Error caught by ErrorBoundary:', error, errorInfo);
   }
 
   private handleRetry = (): void => {

@@ -75,7 +75,7 @@ describe('ErrorBoundary', () => {
 
     expect(consoleErrorSpy).toHaveBeenCalled();
     const errorCall = consoleErrorSpy.mock.calls.find((call) =>
-      typeof call[0] === 'string' && call[0].includes('[BPF Viewer] Error caught by ErrorBoundary')
+      typeof call[0] === 'string' && call[0].includes('[BPFViewer] Error caught by ErrorBoundary')
     );
     expect(errorCall).toBeDefined();
   });

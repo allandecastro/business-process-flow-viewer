@@ -119,7 +119,6 @@ export function sanitizeUrl(url: string): string {
  */
 export function escapeODataValue(value: string): string {
   if (typeof value !== 'string') {
-    console.warn('[BPFViewer] escapeODataValue called with non-string input:', typeof value);
     return '';
   }
   if (!value) return '';

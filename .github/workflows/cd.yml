@@ -1,7 +1,7 @@
 name: CD - Build & Release Solution
 
 on:
-  # Trigger when a version tag is pushed: git tag v2.1.0 && git push --tags
+  # Trigger when a version tag is pushed: git tag v1.0.0 && git push --tags
   push:
     tags:
       - 'v*'

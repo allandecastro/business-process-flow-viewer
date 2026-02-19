@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.15-blue?style=for-the-badge" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.1.16-blue?style=for-the-badge" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License" />
   <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml"><img src="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml"><img src="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml/badge.svg" alt="CD" /></a>
@@ -50,9 +50,9 @@
 
 ---
 
-## What's New in v2
+## Highlights
 
-| Feature | v1 (2020) | v2 |
+| Feature | v1 (2020) | Current |
 |---------|-----------|-----------|
 | Architecture | Standard PCF | **Virtual PCF** |
 | UI Library | Custom CSS | **Fluent UI v9** |
@@ -349,9 +349,9 @@ business-process-flow-viewer/
 ### Releasing
 
 ```bash
-node scripts/bump-version.js 0.x.x
-git add -A && git commit -m "chore: bump version to 0.x.x"
-git tag v0.x.x
+node scripts/bump-version.js x.y.z
+git add -A && git commit -m "chore: bump version to x.y.z"
+git tag vx.y.z
 git push && git push --tags
 ```
 

@@ -99,7 +99,7 @@ const FractionDesignComponent: React.FC<IBPFDesignProps> = ({
       <div className={styles.progressContainer}>
         <div
           className={styles.stageName}
-          style={{ color: colors.activeText }}
+          style={{ color: colors.active }}
           title={label}
         >
           {label}

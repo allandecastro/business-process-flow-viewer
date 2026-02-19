@@ -33,7 +33,7 @@ describe('useBPFDesignHelpers', () => {
       expect(result.current.stageMetadata[2].shouldPulse).toBe(false);
     });
 
-    it('should NOT pulse when active stage is the last stage (process finished)', () => {
+    it('should pulse when active stage is the last stage (process still in progress)', () => {
       const stages = [
         createMockBPFStage('stage1', 'Qualify', 'Qualify', 0, 0, true, false),
         createMockBPFStage('stage2', 'Develop', 'Develop', 1, 1, true, false),
@@ -44,10 +44,27 @@ describe('useBPFDesignHelpers', () => {
         useBPFDesignHelpers(stages, displayMode, mockColors, true)
       );
 
-      // All stages should not pulse because process is finished
+      // Being on the last stage doesn't mean finished — user is still working on it
       expect(result.current.stageMetadata[0].shouldPulse).toBe(false);
       expect(result.current.stageMetadata[1].shouldPulse).toBe(false);
-      expect(result.current.stageMetadata[2].shouldPulse).toBe(false); // Last stage should NOT pulse
+      expect(result.current.stageMetadata[2].shouldPulse).toBe(true); // Active stage should pulse
+    });
+
+    it('should NOT pulse when process is truly finished (no active stage, all completed)', () => {
+      const stages = [
+        createMockBPFStage('stage1', 'Qualify', 'Qualify', 0, 0, true, false), // Completed
+        createMockBPFStage('stage2', 'Develop', 'Develop', 1, 1, true, false), // Completed
+        createMockBPFStage('stage3', 'Propose', 'Propose', 2, 2, true, false), // Completed, not active
+      ];
+
+      const { result } = renderHook(() =>
+        useBPFDesignHelpers(stages, displayMode, mockColors, true)
+      );
+
+      // No active stage + has completed stages = finished — no pulse
+      expect(result.current.stageMetadata[0].shouldPulse).toBe(false);
+      expect(result.current.stageMetadata[1].shouldPulse).toBe(false);
+      expect(result.current.stageMetadata[2].shouldPulse).toBe(false);
     });
 
     it('should NOT pulse when showPulse is disabled', () => {
@@ -84,7 +101,7 @@ describe('useBPFDesignHelpers', () => {
       expect(result.current.stageMetadata[2].shouldPulse).toBe(false);
     });
 
-    it('should handle single-stage process correctly', () => {
+    it('should pulse on single-stage process when active', () => {
       const stages = [
         createMockBPFStage('stage1', 'Only Stage', 'Only Stage', 0, 0, false, true), // Active and only stage
       ];
@@ -93,8 +110,8 @@ describe('useBPFDesignHelpers', () => {
         useBPFDesignHelpers(stages, displayMode, mockColors, true)
       );
 
-      // Single active stage is considered finished, should not pulse
-      expect(result.current.stageMetadata[0].shouldPulse).toBe(false);
+      // Single active stage is not finished (still active), should pulse
+      expect(result.current.stageMetadata[0].shouldPulse).toBe(true);
     });
 
     it('should handle empty stages array', () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { CheckmarkFilled } from '@fluentui/react-icons';
 import type { StageStatus } from '../hooks/useBPFDesignHelpers';
 

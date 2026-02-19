@@ -12,7 +12,7 @@
  *   sessionStorage.removeItem('BPF_DEBUG')
  */
 
-function isDebugMode(): boolean {
+export function isDebugMode(): boolean {
   try {
     // Node.js / test environment — always log so test assertions work
     if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {

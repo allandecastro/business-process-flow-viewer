@@ -1062,9 +1062,8 @@ describe('BusinessProcessFlowViewer', () => {
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
-      if (element.props.records.length > 0) {
-        expect(element.props.records[0].entityDisplayName).toBe('Case');
-      }
+      expect(element.props.records.length).toBeGreaterThan(0);
+      expect(element.props.records[0].entityDisplayName).toBe('Case');
     });
 
     it('falls back to camelCase splitter when metadata is unavailable', async () => {
@@ -1073,9 +1072,8 @@ describe('BusinessProcessFlowViewer', () => {
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
-      if (element.props.records.length > 0) {
-        expect(element.props.records[0].entityDisplayName).toBe('Incident');
-      }
+      expect(element.props.records.length).toBeGreaterThan(0);
+      expect(element.props.records[0].entityDisplayName).toBe('Incident');
     });
 
     it('capitalizes simple entity names like "lead"', async () => {
@@ -1084,9 +1082,8 @@ describe('BusinessProcessFlowViewer', () => {
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
-      if (element.props.records.length > 0) {
-        expect(element.props.records[0].entityDisplayName).toBe('Lead');
-      }
+      expect(element.props.records.length).toBeGreaterThan(0);
+      expect(element.props.records[0].entityDisplayName).toBe('Lead');
     });
 
     it('splits camelCase entity names', async () => {
@@ -1095,9 +1092,8 @@ describe('BusinessProcessFlowViewer', () => {
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
-      if (element.props.records.length > 0) {
-        expect(element.props.records[0].entityDisplayName).toBe('Custom Entity');
-      }
+      expect(element.props.records.length).toBeGreaterThan(0);
+      expect(element.props.records[0].entityDisplayName).toBe('Custom Entity');
     });
 
     it('splits underscored entity names', async () => {
@@ -1106,9 +1102,8 @@ describe('BusinessProcessFlowViewer', () => {
       control.updateView(newContext);
       await new Promise(resolve => setTimeout(resolve, 50));
       const element = control.updateView(newContext);
-      if (element.props.records.length > 0) {
-        expect(element.props.records[0].entityDisplayName).toBe('My Custom Entity');
-      }
+      expect(element.props.records.length).toBeGreaterThan(0);
+      expect(element.props.records[0].entityDisplayName).toBe('My Custom Entity');
     });
   });
 });

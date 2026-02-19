@@ -21,7 +21,7 @@ import {
   WebApiClient,
 } from '../types';
 import { BPFError, ErrorCodes } from '../utils/errorMessages';
-import { isValidEntityName, isValidGuid, escapeODataValue } from '../utils/sanitize';
+import { isValidEntityName, isValidFieldName, isValidGuid, escapeODataValue } from '../utils/sanitize';
 import { createLogger } from '../utils/logger';
 import type { PerfTracker } from '../utils/perfTracker';
 
@@ -145,10 +145,16 @@ export class BPFService {
     const results = new Map<string, IBPFInstance | null>();
     const { bpfEntitySchemaName, lookupFieldSchemaName } = bpfDef;
 
-    // Validate entity name
+    // Validate entity name and lookup field name
     if (!isValidEntityName(bpfEntitySchemaName)) {
       throw new BPFError(
         `Invalid BPF entity name: ${bpfEntitySchemaName}`,
+        ErrorCodes.VALIDATION_ERROR
+      );
+    }
+    if (!isValidFieldName(lookupFieldSchemaName)) {
+      throw new BPFError(
+        `Invalid lookup field name: ${lookupFieldSchemaName}`,
         ErrorCodes.VALIDATION_ERROR
       );
     }
@@ -183,7 +189,7 @@ export class BPFService {
         this.fetchWithTimeout(
           this.webApi.retrieveMultipleRecords(
             bpfEntitySchemaName,
-            `?$filter=${filterConditions}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupFieldSchemaName}&$orderby=createdon desc&$top=5000`
+            `?$filter=${filterConditions}&$orderby=createdon desc&$top=5000`
           ),
           REQUEST_TIMEOUT_MS,
           signal
@@ -294,9 +300,14 @@ export class BPFService {
       };
     });
 
+    // Resolve process name: OOTB BPFs use "name", custom BPFs use "{prefix}_name" (e.g. "bpf_name")
+    const processName = (bpfRecord.name as string)
+      || Object.keys(bpfRecord).filter(k => /^[a-z]+_name$/i.test(k)).map(k => bpfRecord[k] as string).find(Boolean)
+      || bpfEntityName;
+
     return {
       processId: bpfRecord.businessprocessflowinstanceid as string || '',
-      processName: bpfRecord.name as string || bpfEntityName,
+      processName,
       bpfEntityName,
       activeStageId,
       traversedPath,

@@ -9,7 +9,7 @@
  */
 
 import * as React from 'react';
-import type { IBPFDesignProps } from '../../types';
+import type { IBPFDesignProps, DesignStyle } from '../../types';
 import { ChevronDesign } from './ChevronDesign';
 
 // Lazy load non-default design components
@@ -39,7 +39,7 @@ type DesignComponentType = React.FC<IBPFDesignProps> | React.LazyExoticComponent
  * Get design component by style name.
  * Returns ChevronDesign (eagerly loaded) for the default case.
  */
-export function getDesignComponent(designStyle: string): DesignComponentType {
+export function getDesignComponent(designStyle: DesignStyle | string): DesignComponentType {
   const normalizedStyle = designStyle.toLowerCase().trim();
 
   switch (normalizedStyle) {

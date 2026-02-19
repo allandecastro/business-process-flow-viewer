@@ -208,7 +208,7 @@ business-process-flow-viewer/
 
 1. Update version in `package.json`
 2. Update `CHANGELOG.md`
-3. Create git tag: `git tag v2.x.x`
+3. Create git tag: `git tag vx.y.z`
 4. Build solution for deployment
 5. Create GitHub release with notes
 

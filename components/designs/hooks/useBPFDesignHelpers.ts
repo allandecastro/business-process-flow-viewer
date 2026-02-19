@@ -69,14 +69,14 @@ export function useBPFDesignHelpers(
   stageMetadata: IStageMetadata[];
   a11yMetadata: IA11yMetadata;
 } {
-  // Determine if the process is finished (active stage is the last one)
+  // Determine if the process is finished:
+  // When statuscode=2 (Finished), all stages are marked completed with no active stage.
+  // Detect by checking: no stage is active AND at least one is completed.
   const isProcessFinished = useMemo(() => {
-    const activeStage = stages.find(s => s.isActive);
-    if (!activeStage || stages.length === 0) return false;
-
-    // Process is finished if the active stage is the last stage in the array
-    const lastStage = stages[stages.length - 1];
-    return activeStage.stageId === lastStage.stageId;
+    if (stages.length === 0) return false;
+    const hasActiveStage = stages.some(s => s.isActive);
+    const hasCompletedStages = stages.some(s => s.isCompleted);
+    return !hasActiveStage && hasCompletedStages;
   }, [stages]);
 
   // Memoized stage metadata computation

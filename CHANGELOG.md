@@ -5,6 +5,20 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.16] - 2026-02-19
+
+### Fixed
+- **Custom BPF entity support**: Fixed `Could not find a property named 'name'` error when using custom BPF entities (e.g. `adc_custombpf`). Removed hardcoded `$select` from BPF instance query and added dynamic name resolution that handles both OOTB BPFs (`name` column) and custom BPFs (`{prefix}_name` column).
+- **Pulse animation logic**: Fixed `isProcessFinished` to correctly determine when a process is truly finished (no active stage + has completed stages). Active stage on the last step now correctly pulses since the user is still working on it.
+- **FractionDesign rendering**: Fixed incorrect stage rendering in Fraction design component.
+- **StageIcon accessibility**: Fixed stage icon component for proper accessibility attributes.
+- **ErrorBoundary logger**: Fixed logger prefix inconsistency in error boundary component.
+- **Design factory exports**: Fixed design component exports and factory function.
+
+### Changed
+- **Test suite expanded to 371 tests**: Added performance tracker tests, stronger design factory assertions, meaningful BPF service cache tests, finished BPF handling test, and fixed conditional/placeholder test assertions.
+- **Documentation corrections**: Fixed design style count (6 to 8), corrected design names, removed premature version references, and updated versioning instructions across README, TESTING, and CONTRIBUTING docs.
+
 ## [0.1.15] - 2026-02-19
 
 ### Fixed
@@ -146,6 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.16]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.12...v0.1.13

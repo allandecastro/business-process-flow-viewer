@@ -15,19 +15,7 @@
  *   perf.summary();  // logs table to console
  */
 
-function isDebugMode(): boolean {
-  try {
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
-      return true;
-    }
-    return (
-      typeof sessionStorage !== 'undefined' &&
-      sessionStorage.getItem('BPF_DEBUG') === 'true'
-    );
-  } catch {
-    return false;
-  }
-}
+import { isDebugMode } from './logger';
 
 export interface PerfEntry {
   label: string;

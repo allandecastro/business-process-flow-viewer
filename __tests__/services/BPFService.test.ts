@@ -273,11 +273,47 @@ describe('BPFService', () => {
       expect(mockWebAPI.retrieveMultipleRecords).toHaveBeenCalled();
     });
 
-    it('should clear cache for specific BPF', () => {
+    it('should clear cache for specific BPF and refetch on next call', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'opportunitysalesprocess') {
+          return Promise.resolve({
+            entities: [{
+              businessprocessflowinstanceid: 'bpf-001',
+              _opportunityid_value: recordId,
+              _activestageid_value: 'stage1',
+              traversedpath: '',
+              statuscode: 1,
+            }],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [{ processstageid: 'stage1', stagename: 'S1', stagecategory: 0, _processid_value: 'p1' }],
+          });
+        }
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'opportunitysalesprocess' }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      // Populate cache
+      await service.getBPFDataForRecords([recordId], mockConfig);
+
+      // Clear cache for specific BPF
       service.clearCacheForBPF('opportunitysalesprocess');
 
-      // Should not throw error
-      expect(true).toBe(true);
+      // Reset mock call tracking
+      mockWebAPI.retrieveMultipleRecords.mockClear();
+
+      // Fetch again — should make API calls since cache was cleared
+      await service.getBPFDataForRecords([recordId], mockConfig);
+
+      expect(mockWebAPI.retrieveMultipleRecords).toHaveBeenCalled();
     });
   });
 
@@ -323,6 +359,51 @@ describe('BPFService', () => {
       expect(bpfInstance?.stages[1].isCompleted).toBe(true);
       expect(bpfInstance?.stages[2].isCompleted).toBe(false);
       expect(bpfInstance?.stages[2].isActive).toBe(true);
+    });
+
+    it('should mark all stages completed and none active when BPF is finished (statuscode=2)', async () => {
+      const recordId = '00000000-0000-0000-0000-000000000001';
+
+      mockWebAPI.retrieveMultipleRecords.mockImplementation((entityName: string) => {
+        if (entityName === 'opportunitysalesprocess') {
+          return Promise.resolve({
+            entities: [
+              {
+                businessprocessflowinstanceid: 'bpf-001',
+                _opportunityid_value: recordId,
+                _activestageid_value: 'stage3',
+                traversedpath: 'stage1,stage2,stage3',
+                statuscode: 2, // Finished
+              },
+            ],
+          });
+        }
+        if (entityName === 'processstage') {
+          return Promise.resolve({
+            entities: [
+              { processstageid: 'stage1', stagename: 'Stage 1', stagecategory: 0, _processid_value: 'p1' },
+              { processstageid: 'stage2', stagename: 'Stage 2', stagecategory: 1, _processid_value: 'p1' },
+              { processstageid: 'stage3', stagename: 'Stage 3', stagecategory: 2, _processid_value: 'p1' },
+            ],
+          });
+        }
+        if (entityName === 'workflow') {
+          return Promise.resolve({
+            entities: [{ workflowid: 'p1', name: 'Process', uniquename: 'process' }],
+          });
+        }
+        return Promise.resolve({ entities: [] });
+      });
+
+      const result = await service.getBPFDataForRecords([recordId], mockConfig);
+      const bpfInstance = result.get(recordId);
+
+      expect(bpfInstance).toBeDefined();
+      expect(bpfInstance?.statusCode).toBe(2);
+      // All stages should be completed
+      expect(bpfInstance?.stages.every(s => s.isCompleted)).toBe(true);
+      // No stage should be active (finished BPF has no active stage)
+      expect(bpfInstance?.stages.every(s => !s.isActive)).toBe(true);
     });
 
     it('should handle stages in correct order', async () => {

@@ -205,25 +205,11 @@ describe('escapeODataValue', () => {
     expect(escapeODataValue('')).toBe('');
   });
 
-  it('warns and returns empty for null/undefined input', () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-
+  it('returns empty for null/undefined input without warning', () => {
     // @ts-expect-error testing null input
     expect(escapeODataValue(null)).toBe('');
     // @ts-expect-error testing undefined input
     expect(escapeODataValue(undefined)).toBe('');
-
-    expect(warnSpy).toHaveBeenCalledTimes(2);
-    expect(warnSpy).toHaveBeenCalledWith(
-      '[BPFViewer] escapeODataValue called with non-string input:',
-      'object'
-    );
-    expect(warnSpy).toHaveBeenCalledWith(
-      '[BPFViewer] escapeODataValue called with non-string input:',
-      'undefined'
-    );
-
-    warnSpy.mockRestore();
   });
 
   it('returns unchanged for safe values', () => {

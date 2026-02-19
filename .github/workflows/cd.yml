@@ -100,6 +100,19 @@ jobs:
       - name: Build managed solution
         run: dotnet build Solution/Solution.cdsproj -c Release --no-restore /p:BuildProjectReferences=false
 
+      - name: Rename solution zips with version
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $releaseDir = "Solution/bin/Release"
+          Get-ChildItem "$releaseDir/*_managed.zip" | ForEach-Object {
+            Rename-Item $_.FullName "BusinessProcessFlowViewer_${version}_managed.zip"
+          }
+          Get-ChildItem "$releaseDir/*.zip" -Exclude "*_managed.zip","*_${version}_*" | ForEach-Object {
+            Rename-Item $_.FullName "BusinessProcessFlowViewer_${version}.zip"
+          }
+          echo "Solution artifacts:"
+          Get-ChildItem "$releaseDir/*.zip" | ForEach-Object { echo "  $($_.Name)" }
+
       # ── Upload artifacts (always) ──
       - name: Upload managed solution artifact
         uses: actions/upload-artifact@v4

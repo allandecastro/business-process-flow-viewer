@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
   <control
-    namespace="AllanDeCastro"
+    namespace="ADC"
     constructor="BusinessProcessFlowViewer"
     version="0.1.2"
     display-name-key="BusinessProcessFlowViewer"
@@ -10,156 +10,156 @@
     preview-image="preview.svg"
   >
     <external-service-usage enabled="false" />
-    
+
     <!-- ========================================
          BPF CONFIGURATION
          ======================================== -->
-    
+
     <!-- BPF Configuration (JSON) -->
-    <property 
-      name="parametersBPF" 
-      display-name-key="BPF_Configuration" 
-      description-key="BPF_Configuration_Desc" 
-      of-type="SingleLine.Text" 
-      usage="input" 
-      required="true" 
+    <property
+      name="parametersBPF"
+      display-name-key="BpfConfiguration"
+      description-key="BpfConfiguration_Desc"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="true"
       default-value='{"bpfs":[{"bpfEntitySchemaName":"opportunitysalesprocess","lookupFieldSchemaName":"_opportunityid_value"}]}'
     />
-    
+
     <!-- ========================================
          DISPLAY OPTIONS
          ======================================== -->
-    
+
     <!-- Design Style -->
-    <property 
-      name="designStyle" 
-      display-name-key="Design_Style" 
-      description-key="Design_Style_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="designStyle"
+      display-name-key="DesignStyle"
+      description-key="DesignStyle_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="chevron"
     >
-      <value name="chevron" display-name-key="Design_Chevron">chevron</value>
-      <value name="circles" display-name-key="Design_Circles">circles</value>
-      <value name="pills" display-name-key="Design_Pills">pills</value>
-      <value name="segmented" display-name-key="Design_Segmented">segmented</value>
-      <value name="stepper" display-name-key="Design_Stepper">stepper</value>
-      <value name="gradient" display-name-key="Design_Gradient">gradient</value>
-      <value name="line" display-name-key="Design_Line">line</value>
-      <value name="fraction" display-name-key="Design_Fraction">fraction</value>
+      <value name="chevron" display-name-key="DesignChevron">chevron</value>
+      <value name="circles" display-name-key="DesignCircles">circles</value>
+      <value name="pills" display-name-key="DesignPills">pills</value>
+      <value name="segmented" display-name-key="DesignSegmented">segmented</value>
+      <value name="stepper" display-name-key="DesignStepper">stepper</value>
+      <value name="gradient" display-name-key="DesignGradient">gradient</value>
+      <value name="line" display-name-key="DesignLine">line</value>
+      <value name="fraction" display-name-key="DesignFraction">fraction</value>
     </property>
-    
+
     <!-- Display Mode: Stage or Category -->
-    <property 
-      name="displayMode" 
-      display-name-key="Display_Mode" 
-      description-key="Display_Mode_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="displayMode"
+      display-name-key="DisplayMode"
+      description-key="DisplayMode_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="stage"
     >
-      <value name="stage" display-name-key="Display_Stage">stage</value>
-      <value name="category" display-name-key="Display_Category">category</value>
+      <value name="stage" display-name-key="DisplayStage">stage</value>
+      <value name="category" display-name-key="DisplayCategory">category</value>
     </property>
-    
+
     <!-- Record Name Size -->
-    <property 
-      name="recordNameSize" 
-      display-name-key="Record_Name_Size" 
-      description-key="Record_Name_Size_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="recordNameSize"
+      display-name-key="RecordNameSize"
+      description-key="RecordNameSize_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="medium"
     >
-      <value name="small" display-name-key="Size_Small">small</value>
-      <value name="medium" display-name-key="Size_Medium">medium</value>
-      <value name="large" display-name-key="Size_Large">large</value>
+      <value name="small" display-name-key="SizeSmall">small</value>
+      <value name="medium" display-name-key="SizeMedium">medium</value>
+      <value name="large" display-name-key="SizeLarge">large</value>
     </property>
-    
+
     <!-- Show Entity Display Name -->
-    <property 
-      name="showEntityName" 
-      display-name-key="Show_Entity_Name" 
-      description-key="Show_Entity_Name_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="showEntityName"
+      display-name-key="ShowEntityName"
+      description-key="ShowEntityName_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="yes"
     >
       <value name="yes" display-name-key="Yes">yes</value>
       <value name="no" display-name-key="No">no</value>
     </property>
-    
+
     <!-- Enable Click to Open Record -->
-    <property 
-      name="enableNavigation" 
-      display-name-key="Enable_Navigation" 
-      description-key="Enable_Navigation_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="enableNavigation"
+      display-name-key="EnableNavigation"
+      description-key="EnableNavigation_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="yes"
     >
       <value name="yes" display-name-key="Yes">yes</value>
       <value name="no" display-name-key="No">no</value>
     </property>
-    
+
     <!-- Show Pulse Animation on Active Stage -->
-    <property 
-      name="showPulseAnimation" 
-      display-name-key="Show_Pulse_Animation" 
-      description-key="Show_Pulse_Animation_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="showPulseAnimation"
+      display-name-key="ShowPulseAnimation"
+      description-key="ShowPulseAnimation_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="yes"
     >
       <value name="yes" display-name-key="Yes">yes</value>
       <value name="no" display-name-key="No">no</value>
     </property>
-    
+
     <!-- ========================================
          COLOR CONFIGURATION
          ======================================== -->
-    
+
     <!-- Use Platform Theme -->
-    <property 
-      name="usePlatformTheme" 
-      display-name-key="Use_Platform_Theme" 
-      description-key="Use_Platform_Theme_Desc" 
-      of-type="Enum" 
-      usage="input" 
-      required="true" 
+    <property
+      name="usePlatformTheme"
+      display-name-key="UsePlatformTheme"
+      description-key="UsePlatformTheme_Desc"
+      of-type="Enum"
+      usage="input"
+      required="true"
       default-value="yes"
     >
       <value name="yes" display-name-key="Yes">yes</value>
       <value name="no" display-name-key="No">no</value>
     </property>
-    
+
     <!-- Custom Colors (used when usePlatformTheme = no)
          NOTE: Runtime defaults live in utils/themeUtils.ts (DEFAULT_COLORS_LIGHT).
          The default-value attributes below are for the Dataverse form editor UI only. -->
-    <property name="completedColor" display-name-key="Completed_Color" description-key="Completed_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#107C10" />
-    <property name="completedTextColor" display-name-key="Completed_Text_Color" description-key="Completed_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
-    <property name="activeColor" display-name-key="Active_Color" description-key="Active_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#0078D4" />
-    <property name="activeTextColor" display-name-key="Active_Text_Color" description-key="Active_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
-    <property name="inactiveColor" display-name-key="Inactive_Color" description-key="Inactive_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#E1E1E1" />
-    <property name="inactiveTextColor" display-name-key="Inactive_Text_Color" description-key="Inactive_Text_Color_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#666666" />
+    <property name="completedColor" display-name-key="CompletedColor" description-key="CompletedColor_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#107C10" />
+    <property name="completedTextColor" display-name-key="CompletedTextColor" description-key="CompletedTextColor_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
+    <property name="activeColor" display-name-key="ActiveColor" description-key="ActiveColor_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#0078D4" />
+    <property name="activeTextColor" display-name-key="ActiveTextColor" description-key="ActiveTextColor_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#FFFFFF" />
+    <property name="inactiveColor" display-name-key="InactiveColor" description-key="InactiveColor_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#E1E1E1" />
+    <property name="inactiveTextColor" display-name-key="InactiveTextColor" description-key="InactiveTextColor_Desc" of-type="SingleLine.Text" usage="input" required="false" default-value="#666666" />
 
     <!-- ========================================
          DATASET
          ======================================== -->
-    
+
     <data-set name="records" display-name-key="Records" cds-data-set-options="displayCommandBar:false;displayViewSelector:false;displayQuickFind:false">
     </data-set>
-    
+
     <!-- ========================================
          RESOURCES
          ======================================== -->
-    
+
     <resources>
       <code path="index.ts" order="1" />
       <!-- Platform Libraries for Virtual PCF -->
@@ -168,7 +168,7 @@
       <!-- Localization -->
       <resx path="strings/BusinessProcessFlowViewer.1033.resx" version="1.0.0" />
     </resources>
-    
+
     <feature-usage>
       <uses-feature name="WebAPI" required="true" />
       <uses-feature name="Utility" required="true" />

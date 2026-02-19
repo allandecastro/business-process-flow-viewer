@@ -809,7 +809,7 @@ describe('BusinessProcessFlowViewer', () => {
       expect(context.navigation.openForm).toHaveBeenCalledWith({
         entityName: 'opportunity',
         entityId: '00000000-0000-0000-0000-000000000001',
-        openInNewWindow: false,
+        openInNewWindow: true,
       });
     });
 

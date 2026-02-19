@@ -364,7 +364,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     this.context.navigation.openForm({
       entityName,
       entityId: recordId,
-      openInNewWindow: false,
+      openInNewWindow: true,
     });
   }
 

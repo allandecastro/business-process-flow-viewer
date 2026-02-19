@@ -1,6 +1,6 @@
 /**
  * BPF Viewer Component
- * 
+ *
  * Main wrapper component with FluentProvider for theming
  */
 
@@ -9,8 +9,9 @@ import { FluentProvider, webLightTheme, makeStyles, tokens, Spinner, Button, The
 import { ArrowClockwiseRegular, ErrorCircleRegular } from '@fluentui/react-icons';
 import { IBPFViewerProps } from '../types';
 import { BPFRow } from './BPFRow';
-import { debounce } from '../utils/debounce';
 import { ErrorBoundary } from './ErrorBoundary';
+
+const MOBILE_BREAKPOINT = 480;
 
 const useStyles = makeStyles({
   container: {
@@ -57,30 +58,31 @@ const useStyles = makeStyles({
   },
 });
 
-// Hook to detect mobile viewport
-const useIsMobile = (): boolean => {
+// Hook to detect narrow container using ResizeObserver
+// Works correctly inside Dataverse subgrids where the window is wide
+// but the control container may be narrow
+const useContainerMobile = (ref: React.RefObject<HTMLDivElement | null>): boolean => {
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    const debouncedCheck = debounce(checkMobile, 150);
+    const el = ref.current;
+    if (!el) return;
 
-    // Initial check (not debounced)
-    checkMobile();
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setIsMobile(entry.contentRect.width < MOBILE_BREAKPOINT);
+      }
+    });
 
-    // Debounced resize listener (prevents excessive re-renders)
-    window.addEventListener('resize', debouncedCheck);
-    return () => {
-      window.removeEventListener('resize', debouncedCheck);
-      debouncedCheck.cancel();
-    };
-  }, []);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
 
   return isMobile;
 };
 
 // Inner component (with Fluent context)
-const BPFViewerInner: React.FC<IBPFViewerProps> = ({
+const BPFViewerInner: React.FC<IBPFViewerProps & { containerRef: React.RefObject<HTMLDivElement | null> }> = ({
   records,
   settings,
   colors,
@@ -88,9 +90,10 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
   error,
   onNavigate,
   onRefresh,
+  containerRef,
 }) => {
   const styles = useStyles();
-  const isMobile = useIsMobile();
+  const isMobile = useContainerMobile(containerRef);
 
   // Global loading state
   if (isLoading && records.length === 0) {
@@ -132,7 +135,7 @@ const BPFViewerInner: React.FC<IBPFViewerProps> = ({
 
   // Records list
   return (
-    <div 
+    <div
       className={styles.recordsList}
       role="list"
       aria-label={`${records.length} record${records.length !== 1 ? 's' : ''} with business process flow`}
@@ -171,15 +174,16 @@ export const BPFViewer: React.FC<IBPFViewerWithProviderProps> = ({
   ...props
 }) => {
   const styles = useStyles();
-  
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   // Use platform theme if available, otherwise detect system preference
   const theme = platformTheme || webLightTheme;
 
   return (
     <FluentProvider theme={theme}>
       <ErrorBoundary>
-        <div className={styles.container}>
-          <BPFViewerInner {...props} />
+        <div className={styles.container} ref={containerRef}>
+          <BPFViewerInner {...props} containerRef={containerRef} />
         </div>
       </ErrorBoundary>
     </FluentProvider>

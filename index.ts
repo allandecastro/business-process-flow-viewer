@@ -34,6 +34,7 @@ import { createPerfTracker } from './utils/perfTracker';
 
 export class BusinessProcessFlowViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
   private context: ComponentFramework.Context<IInputs>;
+  private notifyOutputChanged: () => void;
   private bpfService: BPFService | null = null;
 
   // State
@@ -56,9 +57,10 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
    */
   public init(
     context: ComponentFramework.Context<IInputs>,
-    _notifyOutputChanged: () => void
+    notifyOutputChanged: () => void
   ): void {
     this.context = context;
+    this.notifyOutputChanged = notifyOutputChanged;
 
     // Initialize BPF Service
     this.bpfService = new BPFService(context.webAPI);
@@ -197,6 +199,7 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
     if (recordIds.length === 0) {
       this.records = [];
       this.isLoading = false;
+      this.notifyOutputChanged();
       return;
     }
 
@@ -316,6 +319,9 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
 
     this.isLoading = false;
     perf.summary();
+
+    // Trigger framework to call updateView with updated records
+    this.notifyOutputChanged();
   }
 
   /**

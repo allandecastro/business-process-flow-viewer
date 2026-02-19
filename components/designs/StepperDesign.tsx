@@ -54,15 +54,12 @@ const useStepperStyles = makeStyles({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     width: '100%',
-    maxWidth: '60px',
   },
   connector: {
-    flex: 1,
+    width: '24px',
+    flexShrink: 0,
     height: CONNECTOR.height,
     marginTop: '14px',
-    marginRight: '4px',
-    marginLeft: '4px',
-    minWidth: CONNECTOR.minWidth,
   },
   pulse: {
     animationName: {

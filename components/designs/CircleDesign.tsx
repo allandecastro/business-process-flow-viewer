@@ -20,18 +20,13 @@ const useCircleStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     width: '100%',
-    paddingRight: '4px',
-    paddingLeft: '4px',
   },
   stageWrapper: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    flexShrink: 0,
-    minWidth: '50px',
-  },
-  stageWrapperMobile: {
-    minWidth: '40px',
+    flex: 1,
+    minWidth: 0,
   },
   circle: {
     width: '32px',
@@ -58,14 +53,13 @@ const useCircleStyles = makeStyles({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     width: '100%',
-    maxWidth: '60px',
     paddingRight: '2px',
     paddingLeft: '2px',
   },
   connector: {
-    flex: 1,
+    width: '24px',
+    flexShrink: 0,
     height: CONNECTOR.height,
-    minWidth: CONNECTOR.minWidth,
   },
   connectorDesktop: {
     marginTop: '-20px',
@@ -97,7 +91,7 @@ const CircleDesignComponent: React.FC<IBPFDesignProps> = ({
 
         return (
           <React.Fragment key={stage.stageId}>
-            <div className={mergeClasses(styles.stageWrapper, isMobile && styles.stageWrapperMobile)}>
+            <div className={styles.stageWrapper}>
               <div
                 className={mergeClasses(
                   styles.circle,

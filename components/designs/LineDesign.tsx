@@ -83,12 +83,10 @@ const useLineStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    maxWidth: '80px',
   },
   labelMobile: {
     marginTop: '6px',
     fontSize: '9px',
-    maxWidth: '60px',
   },
   pulse: {
     animationName: {

@@ -153,7 +153,7 @@
          DATASET
          ======================================== -->
 
-    <data-set name="records" display-name-key="Records" cds-data-set-options="displayCommandBar:false;displayViewSelector:false;displayQuickFind:false">
+    <data-set name="records" display-name-key="Records" cds-data-set-options="displayCommandBar:true;displayViewSelector:true;displayQuickFind:true">
     </data-set>
 
     <!-- ========================================

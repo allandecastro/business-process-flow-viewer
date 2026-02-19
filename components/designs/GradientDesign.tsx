@@ -77,7 +77,6 @@ const useGradientStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    maxWidth: '60px',
   },
   pulse: {
     animationName: {

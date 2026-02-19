@@ -28,6 +28,7 @@ const FILES = {
   packageJson: path.join(ROOT, 'package.json'),
   manifest: path.join(ROOT, 'ControlManifest.Input.xml'),
   solution: path.join(ROOT, 'Solution', 'src', 'Other', 'Solution.xml'),
+  readme: path.join(ROOT, 'README.md'),
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -93,6 +94,20 @@ function updateManifest(newVersion) {
   return oldVersion;
 }
 
+function updateReadmeBadge(newVersion) {
+  let content = readFile(FILES.readme);
+  const regex = /(img\.shields\.io\/badge\/version-)[^-]+(-.+?style=for-the-badge)/;
+  const match = content.match(regex);
+  if (!match) {
+    console.log('  ⚠ No version badge found in README.md (skipped)');
+    return null;
+  }
+  const oldBadge = match[0];
+  content = content.replace(regex, `$1${newVersion}$2`);
+  writeFile(FILES.readme, content);
+  return oldBadge;
+}
+
 function updateSolutionXml(newVersion) {
   let content = readFile(FILES.solution);
   const regex = /(<Version>)([^<]+)(<\/Version>)/;
@@ -139,6 +154,9 @@ function main() {
 
   updateSolutionXml(newVersion);
   console.log(`  ✓ Solution/src/Other/Solution.xml`);
+
+  updateReadmeBadge(newVersion);
+  console.log(`  ✓ README.md (version badge)`);
 
   console.log(`\nDone. Version is now ${newVersion}.`);
   console.log(`\nNext steps:`);

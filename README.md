@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/screenshot.svg" alt="Business Process Flow Viewer" width="180" height="180">
+  <img src="docs/logo.svg" alt="Business Process Flow Viewer" width="180" height="180">
 </p>
 
 <h1 align="center">Business Process Flow Viewer</h1>
@@ -11,8 +11,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.13-blue?style=for-the-badge" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License" />
-  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml"><img src="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml"><img src="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml/badge.svg" alt="CD" /></a>
+  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/allandecastro/business-process-flow-viewer/ci.yml?label=CI&style=for-the-badge" alt="CI" /></a>
+  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml"><img src="https://img.shields.io/github/actions/workflow/status/allandecastro/business-process-flow-viewer/cd.yml?label=CD&style=for-the-badge" alt="CD" /></a>
 </p>
 
 <p align="center">
@@ -428,5 +428,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <p align="center">
-  Made with &#10084; for the Power Platform Community
+  Made with ❤️ for the Power Platform Community
 </p>

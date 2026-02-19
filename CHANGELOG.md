@@ -5,6 +5,15 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-02-19
+
+### Added
+- **Subgrid command bar**: Enabled `displayCommandBar`, `displayViewSelector`, and `displayQuickFind` via `cds-data-set-options` so subgrids show the command bar, view selector, and quick find search.
+
+### Fixed
+- **Loading spinner stuck**: BPF stages now render after data loads. Previously `processDataset` completed async but nothing triggered the framework to re-render. Now calls `notifyOutputChanged` to trigger `updateView`.
+- **Space utilization**: Stage wrappers in Circle and Stepper designs now use `flex: 1` to distribute evenly across full width. Connectors changed to fixed 24px width. Removed `maxWidth` caps on labels in Circle, Stepper, Gradient, and Line designs.
+
 ## [0.1.7] - 2026-02-19
 
 ### Fixed
@@ -122,6 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.8]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.4...v0.1.5

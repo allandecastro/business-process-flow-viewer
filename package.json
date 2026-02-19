@@ -1,6 +1,6 @@
 {
   "name": "business-process-flow-viewer",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "A modern PCF control that displays Business Process Flow stages in grid and subgrid views",
   "author": "Allan De Castro",
   "license": "MIT",

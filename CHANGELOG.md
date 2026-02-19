@@ -5,6 +5,14 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14] - 2026-02-19
+
+### Changed
+- **README screenshot**: Updated preview section to use PNG screenshot instead of SVG placeholder.
+- **CI/CD badges**: Fixed CI/CD badge URLs using shields.io `for-the-badge` style.
+- **Version badge auto-update**: `bump-version.js` now updates the README version badge automatically.
+- **Separate logo file**: Header logo (`docs/logo.svg`) is now independent from the preview screenshot.
+
 ## [0.1.13] - 2026-02-19
 
 ### Fixed
@@ -161,6 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.14]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.10...v0.1.11

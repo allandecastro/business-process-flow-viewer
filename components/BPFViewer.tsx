@@ -167,10 +167,14 @@ const BPFViewerInner: React.FC<IBPFViewerProps & { containerRef: React.RefObject
 // Main component with FluentProvider
 export interface IBPFViewerWithProviderProps extends IBPFViewerProps {
   platformTheme?: Theme;
+  allocatedWidth?: number;
+  allocatedHeight?: number;
 }
 
 export const BPFViewer: React.FC<IBPFViewerWithProviderProps> = ({
   platformTheme,
+  allocatedWidth,
+  allocatedHeight,
   ...props
 }) => {
   const styles = useStyles();
@@ -179,8 +183,15 @@ export const BPFViewer: React.FC<IBPFViewerWithProviderProps> = ({
   // Use platform theme if available, otherwise detect system preference
   const theme = platformTheme || webLightTheme;
 
+  // Use explicit pixel dimensions from the PCF framework so the control
+  // fills the full allocated space in the subgrid container
+  const rootStyle: React.CSSProperties = {
+    width: allocatedWidth ? `${allocatedWidth}px` : '100%',
+    height: allocatedHeight ? `${allocatedHeight}px` : '100%',
+  };
+
   return (
-    <FluentProvider theme={theme}>
+    <FluentProvider theme={theme} style={rootStyle}>
       <ErrorBoundary>
         <div className={styles.container} ref={containerRef}>
           <BPFViewerInner {...props} containerRef={containerRef} />

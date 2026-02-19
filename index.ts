@@ -173,6 +173,8 @@ export class BusinessProcessFlowViewer implements ComponentFramework.ReactContro
       isLoading: this.isLoading || dataset.loading,
       error: this.error,
       platformTheme,
+      allocatedWidth: context.mode.allocatedWidth,
+      allocatedHeight: context.mode.allocatedHeight,
       onNavigate: this.handleNavigate.bind(this),
       onRefresh: this.handleRefresh.bind(this),
     });

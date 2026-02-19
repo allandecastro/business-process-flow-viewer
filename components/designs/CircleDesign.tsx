@@ -18,7 +18,7 @@ import { TRANSITION_DURATION, PULSE_DURATION, CONNECTOR } from './designConstant
 const useCircleStyles = makeStyles({
   container: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
   },
   stageWrapper: {
@@ -62,7 +62,12 @@ const useCircleStyles = makeStyles({
     height: CONNECTOR.height,
   },
   connectorDesktop: {
-    marginTop: '-20px',
+    // Center connector with 32px circle: (32/2) - (2/2) = 15px
+    marginTop: '15px',
+  },
+  connectorMobile: {
+    // Center connector with 24px circle: (24/2) - (2/2) = 11px
+    marginTop: '11px',
   },
   pulse: {
     animationName: {
@@ -114,7 +119,10 @@ const CircleDesignComponent: React.FC<IBPFDesignProps> = ({
             </div>
             {!isLast && (
               <div
-                className={mergeClasses(styles.connector, !isMobile && styles.connectorDesktop)}
+                className={mergeClasses(
+                  styles.connector,
+                  isMobile ? styles.connectorMobile : styles.connectorDesktop
+                )}
                 style={{ backgroundColor: stage.isCompleted ? colors.completed : colors.track }}
                 role="presentation"
               />

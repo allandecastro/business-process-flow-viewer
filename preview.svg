@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200">
   <rect width="300" height="200" fill="#f5f5f5"/>
-  <text x="150" y="30" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#333">BPF Viewer v2</text>
+  <text x="150" y="30" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="bold" fill="#333">BPF Viewer</text>
 
   <!-- Sample BPF row -->
   <rect x="20" y="50" width="260" height="60" rx="4" fill="white" stroke="#e0e0e0"/>

@@ -5,6 +5,15 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.17] - 2026-02-19
+
+### Removed
+- **Unused files**: Removed `TODO.md` (all items completed), `test.html` and `test-harness.html` (standalone HTML test harnesses, not part of the actual test suite).
+
+### Fixed
+- **Preview image**: Removed stale "v2" label from `preview.svg`.
+- **TESTING.md**: Rewrote testing guide to focus on the Jest test suite instead of removed HTML test files.
+
 ## [0.1.16] - 2026-02-19
 
 ### Fixed
@@ -160,6 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.17]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.13...v0.1.14

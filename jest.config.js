@@ -16,8 +16,6 @@ module.exports = {
     '!**/generated/**',
     '!**/out/**',
     '!**/*.d.ts',
-    '!**/test.html',
-    '!**/test-harness.html',
     '!**/mocks/**',
     '!**/__tests__/**',
   ],

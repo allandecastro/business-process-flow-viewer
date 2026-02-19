@@ -5,6 +5,12 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.15] - 2026-02-19
+
+### Fixed
+- **BPF config character limit**: Changed `parametersBPF` property from `SingleLine.Text` (100 char limit) to `Multiple` to support longer JSON configurations with multiple BPF definitions.
+- **CI/CD badges**: Switched to native GitHub workflow badge URLs for private repo compatibility.
+
 ## [0.1.14] - 2026-02-19
 
 ### Changed
@@ -169,6 +175,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.1.15]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.11...v0.1.12

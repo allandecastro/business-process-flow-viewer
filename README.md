@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="preview.svg" alt="Business Process Flow Viewer" width="180" height="180">
+  <img src="docs/screenshot.svg" alt="Business Process Flow Viewer" width="180" height="180">
 </p>
 
 <h1 align="center">Business Process Flow Viewer</h1>
@@ -41,10 +41,12 @@
 ## Preview
 
 <p align="center">
-  <em>A Power Apps Component Framework (PCF) virtual control that displays business process flow stages for records in grid and subgrid views. Works with any Dataverse entity that has a business process flow.</em>
+  <img src="docs/screenshot.svg" alt="BPF Viewer Screenshot" width="100%">
 </p>
 
-<!-- Add a screenshot here: <img src="docs/screenshot.png" alt="BPF Viewer Screenshot" width="100%"> -->
+<p align="center">
+  <em>Visualize business process flow stages directly in grid and subgrid views</em>
+</p>
 
 ---
 

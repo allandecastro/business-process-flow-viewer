@@ -11,8 +11,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.14-blue?style=for-the-badge" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License" />
-  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/allandecastro/business-process-flow-viewer/ci.yml?label=CI&style=for-the-badge" alt="CI" /></a>
-  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml"><img src="https://img.shields.io/github/actions/workflow/status/allandecastro/business-process-flow-viewer/cd.yml?label=CD&style=for-the-badge" alt="CD" /></a>
+  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml"><img src="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml"><img src="https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/cd.yml/badge.svg" alt="CD" /></a>
 </p>
 
 <p align="center">

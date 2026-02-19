@@ -1,31 +1,28 @@
-# BusinessProcessFlowViewer v2
+# Business Process Flow Viewer
 
 [![CI Status](https://github.com/allandecastro/business-process-flow-viewer/workflows/CI/badge.svg)](https://github.com/allandecastro/business-process-flow-viewer/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/badge/npm-2.0.0-blue.svg)](package.json)
 
-A modern PCF (Power Apps Component Framework) control that displays Business Process Flow stages in grid and subgrid views.
+A Power Apps Component Framework (PCF) virtual control that displays business process flow stages for records in grid and subgrid views.
 
-**Author:** Allan De Castro - Microsoft MVP
-**Version:** 2.0.0
-**Type:** Virtual PCF (React)
+Built with React 16.14, TypeScript, and Fluent UI v9. Works with any Dataverse entity that has a business process flow.
 
-![Preview](img/preview.png)
+**Author:** Allan De Castro
 
-## 🚀 What's New in v2
+## What's New in v2
 
-| Feature | v1 (2020) | v2 (2025) |
+| Feature | v1 (2020) | v2 |
 |---------|-----------|-----------|
 | Architecture | Standard PCF | **Virtual PCF** |
 | UI Library | Custom CSS | **Fluent UI v9** |
 | Framework | Vanilla JS | **React 16.14** |
 | Theming | Custom colors only | **Platform theme support** |
-| Dataverse Calls | 1 per record | **Batched (N/50 calls)** |
+| Dataverse Calls | 1 per record | **Batched + parallel** |
 | Bundle Size | ~150KB | **~20KB** (shared libs) |
 | Design Options | 1 | **8 designs** |
-| Responsive | No | **Yes** |
+| Responsive | No | **Container-based** |
 
-## 🎨 Design Styles
+## Design Styles
 
 | Style | Description |
 |-------|-------------|
@@ -38,102 +35,13 @@ A modern PCF (Power Apps Component Framework) control that displays Business Pro
 | `line` | Linear progress track |
 | `fraction` | Fraction display (e.g. 2/5) |
 
-## ⚡ Performance Optimizations
+## Installation
 
-### Dataverse Call Optimization
+1. Download the latest managed solution from [Releases](https://github.com/allandecastro/business-process-flow-viewer/releases)
+2. Import the solution into your Dataverse environment
+3. Add the control to a grid or subgrid view
 
-**Before (v1):** N records = N API calls (sequential)
-```
-Record 1 → API call → wait → response
-Record 2 → API call → wait → response
-...
-Record N → API call → wait → response
-```
-
-**After (v2):** N records = ceil(N/50) API calls (batched)
-```
-Records 1-50 → Single API call with $filter OR → response
-Records 51-100 → Single API call with $filter OR → response
-```
-
-### Caching Strategy
-
-| Cache | Duration | Purpose |
-|-------|----------|---------|
-| Stage definitions | 5 minutes | Stages rarely change |
-| Workflow IDs | 5 minutes | Process ID mapping |
-| Fetched records | Session | Avoid refetching |
-
-### Query Optimization
-
-```typescript
-// BEFORE: Fetching all columns
-retrieveMultipleRecords('opportunitysalesprocess', `?$filter=...`)
-
-// AFTER: Select only needed columns
-retrieveMultipleRecords('opportunitysalesprocess', 
-  `?$filter=${lookupField} eq ${id}&$select=businessprocessflowinstanceid,name,_activestageid_value,traversedpath,statuscode,${lookupField}`)
-```
-
-## 📦 Installation
-
-### Prerequisites
-
-- Node.js 18+
-- Power Platform CLI (`pac`)
-- .NET 6.0 SDK
-
-### Build
-
-```bash
-cd BusinessProcessFlowViewer
-
-# Install dependencies
-npm install
-
-# Generate types from manifest
-npm run refreshTypes
-
-# Build the control
-npm run build
-
-# Test locally
-npm start
-```
-
-### Package for Deployment
-
-A ready-to-build `Solution/` project is included in the repo:
-
-```bash
-# Restore NuGet packages and build managed + unmanaged solution zips
-npm run solution:restore
-npm run solution:build
-
-# Output: Solution/bin/Release/*.zip
-```
-
-Or use `dotnet` directly:
-
-```bash
-dotnet build Solution/Solution.cdsproj -c Release
-```
-
-> **CI/CD:** The [CD workflow](.github/workflows/cd.yml) runs automatically on every GitHub release and produces downloadable solution artifacts.
-
-### Deploying to Dataverse
-
-```bash
-# Authenticate (one-time setup per environment)
-pac auth create --url https://your-org.crm.dynamics.com
-
-# Import the managed solution
-pac solution import --path Solution/bin/Release/BusinessProcessFlowViewer_managed.zip
-```
-
-See [.env.example](.env.example) for environment configuration.
-
-## ⚙️ Configuration
+## Configuration
 
 ### BPF Configuration (JSON)
 
@@ -145,14 +53,17 @@ The `parametersBPF` property accepts a JSON configuration:
     {
       "bpfEntitySchemaName": "opportunitysalesprocess",
       "lookupFieldSchemaName": "_opportunityid_value"
-    },
-    {
-      "bpfEntitySchemaName": "leadtoopportunitysalesprocess",
-      "lookupFieldSchemaName": "_leadid_value"
     }
   ]
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `bpfEntitySchemaName` | Schema name of the BPF entity (e.g. `opportunitysalesprocess`) |
+| `lookupFieldSchemaName` | Lookup field on the BPF entity that references the parent record (e.g. `_opportunityid_value`) |
+
+Multiple BPF definitions can be configured for entities with more than one business process flow.
 
 ### All Properties
 
@@ -161,195 +72,123 @@ The `parametersBPF` property accepts a JSON configuration:
 | `parametersBPF` | String | - | JSON configuration for BPFs |
 | `designStyle` | Enum | `chevron` | Visual design style |
 | `displayMode` | Enum | `stage` | Show stage or category names |
-| `recordNameSize` | Enum | `medium` | Record name font size |
-| `showEntityName` | Enum | `yes` | Show entity badge |
-| `enableNavigation` | Enum | `yes` | Click to open record |
-| `showPulseAnimation` | Enum | `yes` | Pulse on active stage |
-| `usePlatformTheme` | Enum | `yes` | Use platform colors |
-| `completedColor` | String | `#107C10` | Completed stage color |
-| `completedTextColor` | String | `#FFFFFF` | Completed text color |
-| `activeColor` | String | `#0078D4` | Active stage color |
-| `activeTextColor` | String | `#FFFFFF` | Active text color |
-| `inactiveColor` | String | `#E1E1E1` | Inactive stage color |
-| `inactiveTextColor` | String | `#666666` | Inactive text color |
+| `recordNameSize` | Enum | `medium` | Record name font size (small/medium/large) |
+| `showEntityName` | Enum | `yes` | Show entity type badge next to record name |
+| `enableNavigation` | Enum | `yes` | Click row to open record in new tab |
+| `showPulseAnimation` | Enum | `yes` | Subtle animation on active stage |
+| `usePlatformTheme` | Enum | `yes` | Use Dataverse environment theme colors |
+| `completedColor` | String | `#107C10` | Completed stage background color |
+| `completedTextColor` | String | `#FFFFFF` | Completed stage text color |
+| `activeColor` | String | `#0078D4` | Active stage background color |
+| `activeTextColor` | String | `#FFFFFF` | Active stage text color |
+| `inactiveColor` | String | `#E1E1E1` | Inactive stage background color |
+| `inactiveTextColor` | String | `#666666` | Inactive stage text color |
 
-## 🎯 Usage
+Custom colors are used when `usePlatformTheme` is set to `no`.
 
-### Add to Subgrid
+## Performance
 
-1. Open the form editor
-2. Select a subgrid component
-3. Click "Get more components"
-4. Import `BusinessProcessFlowViewer`
-5. Configure properties
+The control is optimized for large datasets:
 
-### Add to View
+- **Batched API calls** - Fetches BPF data for up to 10 records per API call using `$filter` with OR conditions
+- **Parallel requests** - Stage definitions, category labels, workflow IDs, and BPF instances are fetched concurrently with `Promise.all`
+- **Caching** - Stage definitions, workflow IDs, and category labels are cached for 5 minutes
+- **Request cancellation** - Stale requests are cancelled via AbortController when the dataset changes
+- **Column selection** - Only needed columns are requested to minimize payload size
 
-1. Navigate to a view
-2. Click "Get more components"
-3. Import and configure
+### Debug Mode
 
-## 🏗️ Architecture
+Enable performance metrics in the browser console:
 
-```
-BusinessProcessFlowViewer/
-├── index.ts                      # Main ReactControl entry point
-├── ControlManifest.Input.xml     # PCF manifest
-├── components/
-│   ├── BPFViewer.tsx             # Main wrapper with FluentProvider
-│   ├── BPFRow.tsx                # Individual record row
-│   ├── ErrorBoundary.tsx         # Error boundary with retry
-│   ├── index.ts                  # Barrel exports
-│   └── designs/
-│       ├── index.tsx             # Design factory (ChevronDesign eager, rest lazy)
-│       ├── ChevronDesign.tsx     # 8 design components
-│       ├── CircleDesign.tsx
-│       ├── PillDesign.tsx
-│       ├── SegmentedBarDesign.tsx
-│       ├── StepperDesign.tsx
-│       ├── GradientDesign.tsx
-│       ├── LineDesign.tsx
-│       ├── FractionDesign.tsx
-│       ├── shared/StageIcon.tsx  # Shared stage icon component
-│       └── hooks/
-│           └── useBPFDesignHelpers.ts
-├── services/
-│   └── BPFService.ts             # Optimized batched WebAPI calls
-├── types/
-│   └── index.ts                  # TypeScript interfaces
-├── utils/
-│   ├── themeUtils.ts             # Platform theme extraction
-│   ├── debounce.ts               # Debounce/throttle utilities
-│   ├── sanitize.ts               # Input validation & OData escaping
-│   ├── errorMessages.ts          # Error codes & user-friendly messages
-│   └── configValidation.ts       # BPF config JSON validation
-├── __tests__/                    # 340+ tests, 16 suites
-└── strings/
-    └── BusinessProcessFlowViewer.1033.resx
+```js
+sessionStorage.setItem('BPF_DEBUG', 'true')
 ```
 
-## 🔧 Technical Details
+This logs a timing table for each dataset load showing start time, duration, and cache status for each Dataverse API call. Useful for diagnosing slow loading. Disable with:
 
-### Virtual PCF
-
-This control uses the Virtual PCF pattern (GA late 2024):
-
-```typescript
-export class BusinessProcessFlowViewer 
-  implements ComponentFramework.ReactControl<IInputs, IOutputs> {
-  
-  // No container parameter in init()
-  public init(context, notifyOutputChanged): void { }
-  
-  // Returns React element instead of manipulating DOM
-  public updateView(context): React.ReactElement {
-    return React.createElement(BPFViewer, { ... });
-  }
-}
+```js
+sessionStorage.removeItem('BPF_DEBUG')
 ```
 
-### Platform Libraries
+## Development
 
-Using shared platform libraries reduces bundle size:
+### Prerequisites
 
-```xml
-<platform-library name="React" version="16.14.0" />
-<platform-library name="Fluent" version="9.46.2" />
-```
+- Node.js 18.x or 20.x
+- npm
 
-### Fluent UI v9
-
-Uses Griffel for styling (CSS-in-JS):
-
-```typescript
-const useStyles = makeStyles({
-  container: {
-    display: 'flex',
-    ...shorthands.padding('12px'),
-  },
-});
-```
-
-## 🧪 Development & Testing
-
-This project includes comprehensive testing infrastructure with Jest and React Testing Library.
-
-### Running Tests
+### Setup
 
 ```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-
-# Run tests for CI (with coverage)
-npm run test:ci
+npm install
 ```
 
-### Current Test Coverage
+### Commands
 
-Coverage is generated automatically by CI on every push and PR.
-View the latest coverage summary in the [CI workflow run](https://github.com/allandecastro/business-process-flow-viewer/actions/workflows/ci.yml) job summary.
+```bash
+npm run build          # Build the PCF control
+npm test               # Run tests
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Generate coverage report
+npm run lint           # Run ESLint
+```
 
-- Coverage thresholds enforced: 80% statements/lines, 75% branches/functions
-- Run `npm run test:coverage` locally to generate a detailed HTML report in `coverage/`
+### Project Structure
+
+```
+business-process-flow-viewer/
+├── index.ts                       # PCF control entry point
+├── ControlManifest.Input.xml      # PCF manifest
+├── components/
+│   ├── BPFViewer.tsx              # Main wrapper with FluentProvider
+│   ├── BPFRow.tsx                 # Single record row
+│   ├── ErrorBoundary.tsx          # Error boundary
+│   └── designs/                   # 8 design style components
+│       ├── hooks/                 # Shared hooks (useBPFDesignHelpers)
+│       └── shared/                # Shared components (StageIcon)
+├── services/
+│   └── BPFService.ts              # Dataverse API (batching, caching, parallel)
+├── utils/
+│   ├── themeUtils.ts              # Color resolution & theme helpers
+│   ├── configValidation.ts        # BPF config validation
+│   ├── sanitize.ts                # Input sanitization & validation
+│   ├── errorMessages.ts           # User-friendly error messages
+│   ├── perfTracker.ts             # Performance instrumentation
+│   └── logger.ts                  # Centralized logging
+├── types/                         # TypeScript type definitions
+├── __tests__/                     # 354 tests across 17 suites
+├── Solution/                      # Dataverse solution project
+└── .github/workflows/             # CI/CD pipelines
+```
 
 ### Pre-commit Hooks
 
-This project uses Husky and lint-staged to enforce code quality:
-- ESLint automatically fixes issues
-- Tests run for modified files
+Husky and lint-staged enforce code quality on every commit:
+- ESLint with auto-fix
+- Jest tests for modified files
 - Commits are blocked if checks fail
 
-### CI/CD Pipeline
+### CI/CD
 
-**CI** (every push and PR):
-- Linting with ESLint
-- Tests with coverage reporting
-- Build verification
-- Multi-version testing (Node 18.x, 20.x)
+**CI** (every push and PR): Linting, tests with coverage, build verification on Node 18.x and 20.x.
 
-**CD** (on version tag push):
-- Syncs version across `package.json`, `ControlManifest.Input.xml`, and `Solution.xml`
-- Builds the managed + unmanaged Dataverse solution `.zip`
-- Creates a GitHub release with the solution attached
+**CD** (on version tag push `v*`): Builds the managed + unmanaged Dataverse solution and creates a GitHub Release with versioned zip files attached.
 
-### Releasing a New Version
+### Releasing
 
 ```bash
-# 1. Bump version in all project files
-npm run version:bump patch   # or: minor, major, 2.1.0
-
-# 2. Commit and tag
-git add -A && git commit -m "chore: bump version to 2.0.1"
-git tag v2.0.1
-
-# 3. Push — this triggers the CD workflow automatically
+node scripts/bump-version.js 0.x.x
+git add -A && git commit -m "chore: bump version to 0.x.x"
+git tag v0.x.x
 git push && git push --tags
 ```
 
-The CD workflow will build the solution, create a GitHub release at `v2.0.1`, and attach the managed `.zip` for import into Dataverse.
+The CD workflow automatically builds and publishes the solution.
 
-## 📋 Improvement Plan
+## License
 
-See [TODO.md](TODO.md) for the full prioritized improvement checklist (P0–P6).
+MIT License - See [LICENSE](LICENSE) file
 
----
+## Author
 
-## 📝 License
-
-MIT License - See LICENSE file
-
-## 🙏 Acknowledgments
-
-- Microsoft Power Platform team
-- Fluent UI team
-- Power Platform Community
-
----
-
-Made with ❤️ by Allan De Castro - [Blog](https://blog.allandecastro.com) | [GitHub](https://github.com/allandecastro/)
+Allan De Castro - [GitHub](https://github.com/allandecastro/)

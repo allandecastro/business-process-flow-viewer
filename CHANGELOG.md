@@ -5,63 +5,91 @@ All notable changes to the Business Process Flow Viewer will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2025-02-16
+## [0.1.7] - 2026-02-19
+
+### Fixed
+- **Row height**: Reduced excessive vertical spacing in BPF rows. Line design padding reduced from 100px to 36px. Row padding tightened across all designs.
+
+## [0.1.6] - 2026-02-19
+
+### Added
+- **Performance metrics**: Lightweight perf tracker that logs a timing table to the browser console. Enable with `sessionStorage.setItem('BPF_DEBUG', 'true')`. Shows each Dataverse API call's start time, duration, and cache status.
+
+### Changed
+- **Parallelized API calls**: Cold-cache loading reduced from 5-6 sequential Dataverse calls to ~3 by:
+  - Combining two workflow queries (exact + contains) into a single call
+  - Parallelizing `getProcessId` with `getStageCategoryLabels`
+  - Parallelizing stage definitions fetch with BPF instances fetch
+  - Starting BPF data fetch in parallel with entity display name resolution
+
+## [0.1.5] - 2026-02-19
+
+### Fixed
+- **Navigation**: Records now open in a new tab instead of the current one (`openInNewWindow: true`)
+- **Responsive layout**: Replaced `window.innerWidth` with `ResizeObserver` on the container element so narrow Dataverse subgrids correctly trigger mobile layout
+- **Chevron label clipping**: Dynamic padding on chevron labels now accounts for the arrow clip-path indent per stage position (first, middle, last)
+
+## [0.1.4] - 2026-02-19
+
+### Fixed
+- **Config validation**: Dataverse lookup field names starting with `_` (e.g. `_opportunityid_value`) are now accepted. Added `isValidFieldName()` with regex `^[a-z_]` for lookup field validation.
+
+## [0.1.3] - 2026-02-19
+
+### Changed
+- **Namespace**: Renamed from `AllanDeCastro` to `ADC`
+- **Manifest keys**: All display-name-key and description-key attributes converted to PascalCase
+- **Solution zips**: CD pipeline now produces versioned filenames (e.g. `BusinessProcessFlowViewer_0.1.3_managed.zip`)
+
+### Fixed
+- Added missing resx entries for Gradient, Line, and Fraction design styles
+- Removed stale `Design_Timeline` entry
+
+## [0.1.2] - 2026-02-19
+
+### Fixed
+- **CD pipeline**: Restructured PCF build output into a control-named subdirectory to fix `ControlManifest.xml not found` errors during Solution MSBuild packaging (caused by `strings/` directory)
+
+## [0.1.1] - 2026-02-19
+
+### Fixed
+- **CD pipeline**: Moved `preview.svg` from `img/` to project root to prevent MSBuild treating the `img/` directory as a separate control
+
+## [0.1.0] - 2026-02-19
 
 ### Added
 
-#### Testing Infrastructure
-- Complete Jest testing framework with React Testing Library
-- 31 automated tests (25 passing) with 40%+ code coverage
-- Test utilities for easy component testing
-- Mock factories for PCF context, BPF data, and stages
+#### Release Pipeline
+- GitHub Actions CD workflow triggered by tag push (`v*`)
+- Automated Solution packaging (managed + unmanaged)
+- GitHub Release with versioned solution zip artifacts
 
-#### CI/CD Pipeline
-- GitHub Actions workflow for automated testing and building
-- Pre-commit hooks with Husky and lint-staged
-- ESLint auto-fix on staged files
-- Automated test execution for modified files
-- Build verification on Node 18.x and 20.x
-
-#### Code Quality Improvements
-- Shared design helpers hook (`useBPFDesignHelpers`) eliminating ~200 lines of duplication
-- Reusable `StageIcon` component for consistent stage rendering
-- Debounce utility for performance optimization
-- Throttle utility for rate-limiting
-- Applied debouncing to resize listener (150ms delay)
+#### Testing & Quality
+- 354 automated tests across 17 test suites
+- Pre-commit hooks with Husky and lint-staged (ESLint + Jest)
+- CI pipeline for automated testing
 
 #### Security & Validation
-- Input sanitization utilities (`sanitize.ts`)
-- Entity name and GUID validation
-- Hex color validation
-- OData value escaping
+- Input sanitization utilities (entity name, GUID, hex color, OData escaping)
 - BPF configuration validation with detailed error messages
 - Custom `BPFError` class with error codes
-- User-friendly error message translation
 
-#### Documentation
-- Comprehensive README with badges (CI status, coverage, license)
-- CONTRIBUTING.md with development guidelines
-- Development & Testing section in README
-- Inline JSDoc comments for utilities
-- Test coverage documentation
+#### Performance
+- Batch Dataverse API calls (N records in ceil(N/10) calls instead of N calls)
+- 5-minute cache for stage definitions and workflow IDs
+- Request cancellation with AbortController
+- 30-second timeout protection for API calls
 
-### Fixed
-- **Line & Marker Design**: Fixed label overlap with record names below
-  - Increased container `paddingBottom` from 0 → 50px
-  - Increased label `marginTop` from 36px → 48px (desktop), 32px → 40px (mobile)
-  - Pulse animation now more visible with proper spacing
+#### Accessibility
+- ARIA attributes on all design components
+- Keyboard navigation support
+- Screen reader friendly labels
 
 ### Changed
-- Improved resize listener performance with debouncing
-- Enhanced type safety in test utilities
-- Better error messages throughout the application
-
-### Technical Improvements
-- Zero `as any` type assertions in production code
-- Strict TypeScript configuration enforced
-- Consistent code style with ESLint
-- Automated quality gates on every commit
-- Coverage reporting to Codecov
+- Complete rewrite from vanilla JavaScript to React + TypeScript
+- Virtual PCF control with Fluent UI v9 theming
+- 8 design styles: Chevron, Circles, Pills, Segmented, Stepper, Gradient, Line, Fraction
+- Container-based responsive detection with ResizeObserver
 
 ## [1.0.0] - 2020
 
@@ -82,10 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **New Features:**
 - 8 design styles (was 1)
 - Platform theme support
-- Batched Dataverse calls (50x improvement)
+- Batched Dataverse calls
 - Responsive design for mobile
 - React + Fluent UI v9
-- Much smaller bundle size (~20KB vs ~150KB)
 
 **Migration Steps:**
 1. Uninstall v1 solution from environment
@@ -95,5 +122,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[2.0.0]: https://github.com/allandecastro/business-process-flow-viewer/releases/tag/v2.0.0
+[0.1.7]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/allandecastro/business-process-flow-viewer/releases/tag/v0.1.0
 [1.0.0]: https://github.com/allandecastro/business-process-flow-viewer/releases/tag/v1.0.0

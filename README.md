@@ -214,7 +214,35 @@ Enable performance metrics in the browser console:
 sessionStorage.setItem('BPF_DEBUG', 'true')
 ```
 
-This logs a timing table for each dataset load showing start time, duration, and cache status for each Dataverse API call. Disable with:
+Each dataset load logs a collapsible timing table. Example output for 5 records (cold cache):
+
+```
+[BPFViewer] processDataset (5 records) completed in 342ms (5 steps)
+┌───┬──────────────────────────────────────┬────────────┬───────────────┬────────┐
+│   │ Step                                 │ Start (ms) │ Duration (ms) │ Cached │
+├───┼──────────────────────────────────────┼────────────┼───────────────┼────────┤
+│ 0 │ getEntityDisplayName                 │ 0          │ 48            │        │
+│ 1 │ parallel:instances+categoryLabels    │ 0          │ 187           │        │
+│ 2 │ retrieveActivePaths                  │ 188        │ 112           │        │
+│ 3 │ fetchBPF:opportunitysalesprocess     │ 0          │ 301           │        │
+│ 4 │ getBPFDataForRecords                 │ 0          │ 342           │        │
+└───┴──────────────────────────────────────┴────────────┴───────────────┴────────┘
+```
+
+On subsequent loads with warm cache, you'll see `Cached: yes` and near-zero durations:
+
+```
+[BPFViewer] processDataset (5 records) completed in 3ms (3 steps)
+┌───┬──────────────────────────────────────┬────────────┬───────────────┬────────┐
+│   │ Step                                 │ Start (ms) │ Duration (ms) │ Cached │
+├───┼──────────────────────────────────────┼────────────┼───────────────┼────────┤
+│ 0 │ getEntityDisplayName                 │ 0          │ 0             │ yes    │
+│ 1 │ parallel:instances+categoryLabels    │ 0          │ 2             │        │
+│ 2 │ getBPFDataForRecords                 │ 0          │ 3             │        │
+└───┴──────────────────────────────────────┴────────────┴───────────────┴────────┘
+```
+
+Disable with:
 
 ```js
 sessionStorage.removeItem('BPF_DEBUG')

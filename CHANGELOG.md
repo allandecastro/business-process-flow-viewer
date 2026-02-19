@@ -144,35 +144,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 8 design styles: Chevron, Circles, Pills, Segmented, Stepper, Gradient, Line, Fraction
 - Container-based responsive detection with ResizeObserver
 
-## [1.0.0] - 2020
-
-### Initial Release
-- Basic BPF visualization in grid/subgrid views
-- Single design style (chevron)
-- Custom CSS styling
-- Vanilla JavaScript implementation
-
----
-
-## Upgrade Guide
-
-### From v1 to v2
-
-**Breaking Changes:** None - v2 is fully backward compatible
-
-**New Features:**
-- 8 design styles (was 1)
-- Platform theme support
-- Batched Dataverse calls
-- Responsive design for mobile
-- React + Fluent UI v9
-
-**Migration Steps:**
-1. Uninstall v1 solution from environment
-2. Import v2 solution
-3. Existing configurations work without changes
-4. Optionally explore new design styles and features
-
 ---
 
 [0.1.15]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.14...v0.1.15
@@ -191,4 +162,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.2]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/allandecastro/business-process-flow-viewer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/allandecastro/business-process-flow-viewer/releases/tag/v0.1.0
-[1.0.0]: https://github.com/allandecastro/business-process-flow-viewer/releases/tag/v1.0.0
